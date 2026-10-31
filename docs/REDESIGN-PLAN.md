@@ -95,7 +95,7 @@ the next.
 | R2 | **Preview on the Mac:** render Ford's screens with FFDec, before and after a change, so each step is seen before the car. **Done 2026-10-31** (`tools/preview_screens.py`; the pictures stay private) | None |
 | R3 | **First Ford screen, not at start-up** (a Phone or Climate sub-screen): pictures only, then one class. Proves Ford's files accept changes | Low to medium |
 | R4 | **Media, Phone, Climate**, one screen per visit | Medium |
-| R5 | **Navigation overlays** (turn card, buttons) | Medium |
+| R5 | **Navigation overlays** (turn card, buttons) and the **speed box**: the speed limit from Ford's map data beside the GPS speed ([SPEED.md](SPEED.md)) | Medium |
 | R6 | **Start-up rehearsal:** change one start-up file that nobody sees (the goodbye animation's still) and undo it, to prove recovery where it matters | Medium |
 | R7 | **Home** (start-up): the four cards | High |
 | R8 | **Frame** (`AppConsole.swf`, start-up, on every screen) | Highest |

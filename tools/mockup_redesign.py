@@ -238,6 +238,26 @@ def nav(s):
     s.button((W - 92, y0 + 100, W - 12, y0 + 180), "–", size=30)
 
 
+def speed_box(s, x, y, limit, speed):
+    """The speed box on the map: the speed limit as a Swedish sign (yellow, red ring) from Ford's
+    map data, and the GPS speed beside it. Over the limit (+3 km/h) the number turns amber; it
+    never blinks."""
+    over = speed > limit + 3
+    s.card((x, y, x + 236, y + 104))
+    r, cx, cy = 40, x + 56, y + 52
+    s.d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 204, 0))
+    s.d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=(208, 32, 44), width=9)
+    s.text((cx, cy + 1), str(limit), 30, True, (0, 0, 0), "mm")
+    colour = (255, 176, 32) if over else s.t["text"]
+    s.text((x + 168, y + 44), str(speed), 44, True, colour, "mm")
+    s.text((x + 168, y + 84), "km/h (GPS)", 14, color=s.t["dim"], anchor="mm")
+
+
+def nav_speed(s, speed=68):
+    nav(s)
+    speed_box(s, 12, H - BOTTOM - 116, 70, speed)
+
+
 SCREENS = {"home": home, "media": media, "phone": phone, "climate": climate, "nav": nav}
 
 
@@ -250,6 +270,10 @@ def main(out, lang):
         draw_screen(screen)
         screen.image.save(out / f"redesign-{name}.png")
         pictures.append((name, screen.image))
+    for name, speed in (("nav-speed", 68), ("nav-speed-over", 82)):
+        screen = Screen(DAY, WORDS[lang])
+        nav_speed(screen, speed)
+        screen.image.save(out / f"redesign-{name}.png")
     night = Screen(NIGHT, WORDS[lang])
     home(night)
     night.image.save(out / "redesign-home-night.png")
