@@ -7,7 +7,8 @@ simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
 Första turen gick igenom: alla delar ligger verifierade byte för byte, och ångra-stickan
 återställde allt. Syntes gjorde bara Apps-rutorna. Night-färgerna kom på men syns knappt
-(bara glöden och områdesknapparna ändras), och samtalshistoriken hann inte kontrolleras.
+(bara glöden och områdesknapparna ändras). Samtalshistoriken såg ut som förut, men det är
+oklart om SYNC hade startat om innan den öppnades.
 
 En använd sticka installerar inget igen: SyncExtPack döper om `install.bin` till
 `installed.bin`. Därför är båda stickorna nu lagda med nya jobb:
@@ -18,11 +19,13 @@ En använd sticka installerar inget igen: SyncExtPack döper om `install.bin` ti
 
 I bilen:
 
-1. Parkerad, tändningen på. Stoppa i SYNC-stickan och vänta tills SYNC har startat om.
-2. **Telefon, Senaste samtal:** tre stora rader per sida i stället för fem? Ta ett foto.
-   Kontrollerna står under steg 7 nedan.
-3. Ser något fel ut: stoppa i UNTITLED 2.
-4. Ta med stickan eller stickorna till Macen.
+1. Parkerad, tändningen på, telefonen ansluten via Bluetooth. Stoppa i SYNC-stickan.
+2. Vänta: "Install successfully completed", sedan **startar SYNC om** (skärmen blir svart,
+   Ford-loggan kommer). Öppna ingenting förrän SYNC är tillbaka.
+3. **Telefon, Samtalshistorik**, med samtal i listan: tre stora rader per sida, eller fem som
+   förut? **Ta ett foto.** Kontrollerna står under steg 7 nedan.
+4. Ser något fel ut: stoppa i UNTITLED 2.
+5. Ta med fotot och stickan eller stickorna till Macen.
 
 ## Allt på en gång (samlingsjobbet, första turen)
 
