@@ -27,6 +27,7 @@ Its review from the driver's seat (glance, gloves, climate, icons, language, per
 [docs/UX-REVIEW.md](docs/UX-REVIEW.md).
 Speed on the map: [docs/SPEED.md](docs/SPEED.md). A night screen, and album covers over Bluetooth:
 [docs/NIGHT.md](docs/NIGHT.md). Spotify on SYNC 2, which way: [docs/SPOTIFY.md](docs/SPOTIFY.md).
+The next car test, step by step (Swedish): [docs/BILTEST.md](docs/BILTEST.md).
 
 ![A mock-up of a new Apps menu (our own drawing)](docs/mockups/apps-menu-v1.png)
 
