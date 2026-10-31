@@ -64,4 +64,4 @@ worked:
 |---|---|---|---|
 | Colours (`s2am job theme`) | `\8inchSkins\Ford\Sync\Themes\` Theme.XML and four gradient BMPs | Yes, read when SYNC starts | `theme --restore <job>` |
 | Wallpaper (SYNC's own editor) | `\8inchSkins\Ford\Sync\Apps\Home\Wallpapers\` | Yes | Pick another wallpaper in Settings |
-| Apps menu (planned) | `\8inchSkins\Ford\Sync\Apps\Info\SyncApps\` | No, only when Apps opens | Restore job (to be built with it) |
+| Apps menu (`s2am job apps-menu`) | `\8inchSkins\Ford\Sync\Apps\Info\SyncApps\` SyncApps.swf, plus pictures in `Tiles\` | No, only when Apps opens | `apps-menu --restore <job>` (the pictures stay, unused) |

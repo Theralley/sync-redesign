@@ -22,6 +22,9 @@ not yet run in the car.
 The whole plan, with what is known and the safety rules: [docs/PLAN.md](docs/PLAN.md).
 How to undo any change, step by step: [docs/RECOVERY.md](docs/RECOVERY.md).
 The plan for a new menu, with a first mock-up: [docs/MENU-PLAN.md](docs/MENU-PLAN.md).
+The plan for a completely new interface, with sketches per screen: [docs/REDESIGN-PLAN.md](docs/REDESIGN-PLAN.md).
+Its review from the driver's seat (glance, gloves, climate, icons, language, performance):
+[docs/UX-REVIEW.md](docs/UX-REVIEW.md).
 
 ![A mock-up of a new Apps menu (our own drawing)](docs/mockups/apps-menu-v1.png)
 
@@ -36,6 +39,22 @@ python3 -m s2am job theme --restore <that job> --serial YOURSERIAL  # its undo s
 
 The change backs up the five theme files on the car and the stick, copies the new ones in and
 restarts SYNC; the Mac checks every byte after import. The undo stick carries the originals.
+
+## A new Apps menu
+
+The Apps menu (where AutoKit, Video Player and Total Commander live) becomes a grid of big
+tiles: CarPlay first, three small tiles, and "All apps", which shows the old list. It is
+SyncExtPack's file, not Ford's, and SYNC loads it only when Apps is opened.
+
+```sh
+python3 tools/make_tiles.py tiles/
+python3 tools/build_apps_menu.py ~/.s2am/SERIAL/reports/<drive log>/skins/8inchSkins/Ford/Sync/Apps/Info/SyncApps/SyncApps.swf SyncApps-tiles.swf
+python3 -m s2am job apps-menu --swf SyncApps-tiles.swf --tiles tiles/ --serial YOURSERIAL   # change stick
+python3 -m s2am job apps-menu --restore <that job> --serial YOURSERIAL                     # undo stick
+```
+
+SyncExtPack publishes its menu without a licence, so this repository never holds its code:
+the build changes your own copy on your Mac.
 
 ## Collecting data from the car
 
@@ -59,6 +78,12 @@ only reads from the car.
 |---|---|
 | `tools/swftags.py FILE.swf` | Lists an SWF's tags, its exported ActionScript 2 classes and the strings in its code. No Java needed |
 | `tools/mockup_apps_menu.py OUT.png` | Draws the Apps menu mock-up (our own drawing, Pillow) |
+| `tools/make_tiles.py OUTFOLDER [--lang sv\|en]` | Draws the tile pictures for the new Apps menu (our own drawings), Swedish by default, full colour but compact |
+| `tools/make_theme.py CAR_THEMES OUT` | The "Night" colours: the car's own Theme.XML and gradients, recoloured in exactly their format |
+| `tools/preview_screens.py CAR_APPS OUT` | Renders Ford's screens on the Mac (FFDec) as a baseline; keep the pictures private |
+| `tools/mockup_redesign.py OUT [--lang sv\|en]` | Draws the redesign sketches (our own drawings), Swedish by default |
+| `tools/icons.py` | The redesign's one icon family (26 icons), used by the tiles and the sketches |
+| `tools/build_apps_menu.py CAR_SWF OUT_SWF` | Builds the tiled Apps menu from **your car's own** SyncApps.swf: adds `tools/apps_menu_tiles.as` with FFDec (pinned, in Docker) and checks that only one class changed |
 
 ## Rules
 

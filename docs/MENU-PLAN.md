@@ -22,7 +22,7 @@ keep those calls and the class names Ford's code looks for.
 |---|---|---|---|
 | M1 | **Colours**: `s2am job theme` (Lincoln preset now, our own palette next). Theme preview on the Mac before each change | Low: data files, Ford's own format | **Done 2026-10-31**: change and undo verified in the car; the visible change was small |
 | M2 | **Our own palette**: a flat, dark set (deep grey background, one accent per area, less glow), as `Theme.XML` + four 800x240 gradients from a generator in `tools/` | Low | Preview, then car test with undo |
-| M3 | **A new Apps menu**: big tiles (CarPlay/Android Auto first), dark and flat, generated with `swfmill` the way SyncExtPack builds its own. Not a start-up file | Low to medium | Opens, every tile starts its app, undo restores SyncExtPack's |
+| M3 | **A new Apps menu**: big tiles (CarPlay/Android Auto first), dark and flat, generated with `swfmill` the way SyncExtPack builds its own. Not a start-up file | Low to medium | **Built 2026-10-31** (`tools/build_apps_menu.py`, `make_tiles.py`), rehearsed with the car's files; first car test that day |
 | M4 | **Decompile and document Home.swf on the Mac** (FFDec in Docker): which calls fill each corner, which events it sends | None (Mac only) | A written map of Home's code |
 | M5 | **A lighter Home**: the same four corners without animations and with fewer layers, to cut `Desktop.exe`'s ~52% processor use at rest. Changes only pictures and timings first, code last | Medium: a start-up file | Only after M1 and M3 have proven undo in the car |
 | M6 | **A new Home layout** (for example a big CarPlay tile, clock, now playing) | High | Separate decision after M5 |
@@ -36,3 +36,20 @@ keep those calls and the class names Ford's code looks for.
 - The same layout day and night; only brightness changes.
 
 Mock-ups are our own drawings (no Ford artwork) in `docs/mockups/`.
+
+## How the Apps menu works (from SyncExtPack's SyncApps.swf, 2026-10-31)
+
+- Four ActionScript 2 classes: `SyncApps` (Ford's Apps screen logic), `SyncAppsCustom`
+  (SyncExtPack's: reads `SyncApps.xml`), `SetAppsRow` (one row of the list) and
+  `SyncButtonDayNight`.
+- `SyncAppsCustom.processXML()` turns `SyncApps.xml` into up to ten entries and hands them to
+  `SyncApps.FillTheList()`, which builds a 2x5 list (rows 44 px high, 650 px wide) in the area
+  x 170-795, y 106-406. The rest of the screen is SYNC's own frame.
+- An app starts with `new Plugins.NativeApplet(<native>)`, the `<native>` name from the XML.
+- If a stick holds `skeleton_key.dat`, the menu reads its list from `\USB Disk\SyncApps.xml`
+  instead: a way to try menu entries without writing to the car.
+- SyncExtPack's menu switches off SYNC's while-driving restrictions
+  (`BezelDiagnosticsPlugin.SetDrivingRestrictions(false)`). The tiled menu keeps that
+  unchanged; the project's rule stays: use the apps when parked.
+- Our change: `processXML()` calls `showTiles()` instead, which draws the tiles on top
+  (pictures from `Tiles\<native>[-big].png`); "All apps" calls the original `FillTheList()`.

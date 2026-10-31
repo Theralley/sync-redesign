@@ -5,6 +5,10 @@ dumps/
 reports/
 skins/
 screens/
+preview*/
+night/
+tiles/
+*.XML
 # local tool state
 .omc/
 .DS_Store
