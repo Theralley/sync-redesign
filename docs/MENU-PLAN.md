@@ -20,7 +20,7 @@ keep those calls and the class names Ford's code looks for.
 
 | Step | What | Risk | Gate |
 |---|---|---|---|
-| M1 | **Colours**: `s2am job theme` (Lincoln preset now, our own palette next). Theme preview on the Mac before each change | Low: data files, Ford's own format | Done when the Lincoln test and its undo both verify |
+| M1 | **Colours**: `s2am job theme` (Lincoln preset now, our own palette next). Theme preview on the Mac before each change | Low: data files, Ford's own format | **Done 2026-10-31**: change and undo verified in the car; the visible change was small |
 | M2 | **Our own palette**: a flat, dark set (deep grey background, one accent per area, less glow), as `Theme.XML` + four 800x240 gradients from a generator in `tools/` | Low | Preview, then car test with undo |
 | M3 | **A new Apps menu**: big tiles (CarPlay/Android Auto first), dark and flat, generated with `swfmill` the way SyncExtPack builds its own. Not a start-up file | Low to medium | Opens, every tile starts its app, undo restores SyncExtPack's |
 | M4 | **Decompile and document Home.swf on the Mac** (FFDec in Docker): which calls fill each corner, which events it sends | None (Mac only) | A written map of Home's code |

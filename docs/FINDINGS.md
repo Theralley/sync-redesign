@@ -66,9 +66,20 @@ For pictures of the screens themselves, the Flash files will be rendered on the 
 - `\Nuance` (589 MB) is voice control, `\Gracenote` (66 MB) music recognition,
   `\SDMemory` the navigation maps. None of them is a redesign target.
 
+## First change in the car, 2026-10-31
+
+Lincoln's colours on Ford's theme (`s2am job theme --preset lincoln`), then its undo stick.
+Both verified byte for byte after import. **The colours file works, and the undo works.** The
+visible change was small: Lincoln's palette is muted, and `Theme.XML` with the gradients
+colours only the glow and the area buttons. A bigger look needs our own, bolder palette
+(menu plan M2), then the Flash screens themselves (M3 onwards).
+
+Fetching car files for study: files built into SYNC's read-only system image (most of
+`\Windows\*.dll`) cannot be copied as files on CE; only files on the flash disk can.
+
 ## Next
 
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the
    gradients into mock screens, to choose colours before anything goes to the car.
-2. Lighter logger: copy the screen every 5 s instead of every second, or only on demand.
+2. ~~Lighter logger~~: done, the screen is copied every 10 s (sync2-auto-magic 03e2fc5).
 3. Find out how SYNC chooses the Ford or the Lincoln skin.
