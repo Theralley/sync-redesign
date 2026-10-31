@@ -1,0 +1,11 @@
+# Ford's files and anything taken from the car stay on the Mac (~/.s2am), never here
+*.swf
+*.bmp
+dumps/
+reports/
+skins/
+screens/
+# local tool state
+.omc/
+.DS_Store
+__pycache__/
