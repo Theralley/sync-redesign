@@ -1,8 +1,34 @@
-# Biltest: Night-färger, svenska Apps-rutor, städning
+# Biltest: Night-färger, svenska Apps-rutor, samtalshistoriken, städning
 
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
-simulerad SYNC med bilens egna filer, i ordningen nedan. Varje steg och båda ångra-jobben
-verifierades byte för byte, även efter städningen. Inget har gått till bilen.
+simulerad SYNC med bilens egna filer. Inget har gått till bilen.
+
+## Allt på en gång (samlingsjobbet)
+
+**SYNC-stickan** bär `bundle-1c35`, som kör fem jobb i en tur, i den här ordningen:
+
+1. Night-färgerna (`theme-fd69`)
+2. SyncExtPacks egen Apps-meny tillbaka (`appmenu-83d5`), för att
+3. lägga på vår meny med svenska rutor (`appmenu-1e46`)
+4. Senaste samtal med stora rader och våra ikoner (R3b, `screen-6ffe`)
+5. Städning av s2am:s gamla jobbmappar (`clean-0831`)
+
+Stoppar en del körs inget efter den, och Macen säger vilken och varför. Varje del verifieras
+för sig när stickan importeras.
+
+**UNTITLED 2** bär `bundle-8737`, som ångrar allt i en tur: Fords samtalshistorik,
+SyncExtPacks egen Apps-meny och Fords färger.
+
+I bilen:
+
+1. Parkerad, tändningen på. Stoppa i SYNC-stickan och rör den inte förrän SYNC har startat
+   om (en gång, efter alla delarna).
+2. Gör kontrollerna nedan: Night (steg 1), svenska rutor (steg 3) och stora rader (steg 7).
+3. Ser något fel ut: stoppa i UNTITLED 2. Startar inte skärmen alls: följ
+   [RECOVERY.md](RECOVERY.md).
+4. Ta SYNC-stickan till Macen, så importeras och verifieras allt.
+
+Nedan står samma jobb ett och ett, om du hellre tar dem i delar.
 
 ## Så går varje tur
 
