@@ -78,6 +78,17 @@ over it, before anything at start-up changes.
 | Test, nothing changed | Play Spotify over Bluetooth (not through CarPlay), open Ford's Media screen. A cover means SYNC gets one, and the night screen can use the same picture; Ford's plain Bluetooth picture means no |
 | With CarPlay | The phone draws the covers inside CarPlay itself; while CarPlay fills the screen, our night screen is not shown |
 
+## Album covers over USB (the iPhone by cable)
+
+| Part | Finding |
+|---|---|
+| Ford's media screen | Shows a cover for songs from any source whose picture SYNC's media service hands over (`GetAlbumArt`), USB and iPod included; the iPod is its own source (`MPConst.IPOD`) |
+| SYNC's iPhone support | `IPDSvc`, `IPDApi`, `IPDHID`, `IPDACP` (Apple's authentication chip) and the logos `Ford.ipod` and `Ford-gray.ipod`, which SYNC shows on the phone. That is Apple's older iPod accessory mode: the car browses and plays **the phone's own music library** (the Music app) |
+| Spotify | Not in that library. In iPod mode SYNC plays and describes the Music app's songs; Spotify's songs, and so its covers, very likely do not reach SYNC over USB. Over Bluetooth Spotify gives the song and artist, without a cover (above) |
+| So | Covers over USB: possible for the phone's own music, only if SYNC asks the phone for them; very likely not for Spotify. The night screen uses the same picture as Ford's media screen, so it shows a cover exactly when Ford's screen does |
+| Test, nothing changed | The iPhone by cable, source USB or iPod: a song from the Music app, then Spotify. A cover on Ford's media screen for either means the night screen can show it |
+| With the CarPlay adapter | The adapter takes the USB port and the iPhone talks to it instead of to SYNC's iPod mode, so this path ends when CarPlay comes |
+
 ## Steps
 
 1. Tonight, nothing changed: Ford's Auto dim and Off (above); the Bluetooth cover test.
