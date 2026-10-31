@@ -38,7 +38,7 @@ WORDS = {
            "sources": "Källa", "presets": "Förval", "save": "Spara", "outside": "6° ute", "auto": "Auto",
            "driver": "Förare", "passenger": "Passagerare", "min_temp": "Min temp", "dual": "Dual",
            "max": "Max", "rear": "Bakruta", "ac": "A/C", "max_ac": "Max A/C", "recirc": "Återluft",
-           "fan": "Fläkt", "work": "Jobbet", "garage": "Verkstan", "off": "Av"},
+           "fan": "Fläkt", "work": "Jobbet", "garage": "Verkstan", "off": "Av", "decimal": ","},
     "en": {"phone": "Phone", "nav": "Map", "home": "Home", "media": "Media", "climate": "Climate",
            "playing": "Now playing", "route": "Route", "home_dest": "Home", "eta": "24 min, arrive 12:07",
            "recent": "Recent calls", "keypad": "Keypad", "contacts": "Contacts", "favourites": "Favourites",
@@ -47,7 +47,7 @@ WORDS = {
            "sources": "Source", "presets": "Presets", "save": "Save", "outside": "6° outside", "auto": "Auto",
            "driver": "Driver", "passenger": "Passenger", "min_temp": "Min temp", "dual": "Dual",
            "max": "Max", "rear": "Rear", "ac": "A/C", "max_ac": "Max A/C", "recirc": "Recirc",
-           "fan": "Fan", "work": "Work", "garage": "Garage", "off": "Off"},
+           "fan": "Fan", "work": "Work", "garage": "Garage", "off": "Off", "decimal": "."},
 }
 
 
@@ -56,10 +56,16 @@ def font(size, bold=False):
 
 
 class Screen:
-    def __init__(self, theme, words):
+    def __init__(self, theme, words, dual=False):
         self.t, self.w = theme, words
+        self.dual = dual  # Ford's Climate.DUALBUTTONSTATE: the passenger has a temperature of their own
+        self.temps = (19.0, 21.5)  # Climate.TEMPDRIVERSET, Climate.TEMPCODRIVERSET
         self.image = Image.new("RGB", (W, H), theme["bg"])
         self.d = ImageDraw.Draw(self.image)
+
+    def deg(self, value):
+        """A temperature the way the language writes it: 19,0° in Swedish, 19.0° in English."""
+        return f"{value:.1f}°".replace(".", self.w["decimal"])
 
     def text(self, xy, value, size, bold=False, color=None, anchor="la"):
         self.d.text(xy, value, font=font(size, bold), fill=color or self.t["text"], anchor=anchor)
@@ -99,8 +105,18 @@ class Screen:
                 d.rectangle((x, H - BOTTOM, x + width, H), fill=t["panel"])
             d.rectangle((x + 24, H - BOTTOM, x + width - 24, H - BOTTOM + 3), fill=t["area"][key])
             icon = {"nav": "map", "home": "home"}.get(key, key)
-            icons.draw(d, icon, x + width // 2, H - BOTTOM + 24, 24, t["text"] if active else t["dim"])
-            self.text((x + width // 2, H - 14), self.w[key], 14, active, t["text"] if active else t["dim"], "mm")
+            colour = t["text"] if active else t["dim"]
+            icons.draw(d, icon, x + width // 2, H - BOTTOM + 24, 24, colour)
+            if key == "climate":  # the set temperature in place of the word, both with Dual on
+                cx = x + width // 2
+                if self.dual:
+                    self.text((cx - 8, H - 14), self.deg(self.temps[0]), 15, True, t["text"], "rm")
+                    d.line((cx, H - 22, cx, H - 7), fill=t["dim"], width=1)
+                    self.text((cx + 8, H - 14), self.deg(self.temps[1]), 15, True, t["text"], "lm")
+                else:
+                    self.text((cx, H - 14), self.deg(self.temps[0]), 15, True, t["text"], "mm")
+            else:
+                self.text((x + width // 2, H - 14), self.w[key], 14, active, colour, "mm")
 
     def symbol(self, box, kind):
         """Media keys, drawn (the fonts lack them)."""
@@ -136,7 +152,7 @@ def home(s):
     s.text((430, y0 + 222), "iPhone", 24, True)
     s.card((604, y0 + 176, 788, y1), a["climate"])
     s.text((626, y0 + 194), w["climate"], 16, color=s.t["dim"])
-    s.text((626, y0 + 220), "19.0°", 34, True)
+    s.text((626, y0 + 220), s.deg(s.temps[0]), 34, True)
     s.text((626, y0 + 262), w["auto"], 16, color=s.t["dim"])
 
 
@@ -191,7 +207,8 @@ def climate(s):
     for x0, side in ((12, w["driver"]), (548, w["passenger"])):  # temperatures, top left and right
         s.card((x0, y, x0 + 240, y + 84))
         s.button((x0 + 8, y + 8, x0 + 64, y + 76), "–", size=30)
-        s.text((x0 + 120, y + 34), "19.0°", 30, True, anchor="mm")
+        s.text((x0 + 120, y + 34), s.deg(s.temps[0] if side == w["driver"] or not s.dual else s.temps[1]), 30, True,
+               anchor="mm")
         s.text((x0 + 120, y + 66), side, 13, color=s.t["dim"], anchor="mm")
         s.button((x0 + 176, y + 8, x0 + 232, y + 76), "+", size=30)
     s.button((352, y, 448, y + 84), w["auto"], "power", on=True)  # power, top centre
@@ -240,17 +257,19 @@ def nav(s):
 
 def speed_box(s, x, y, limit, speed):
     """The speed box on the map: the speed limit as a Swedish sign (yellow, red ring) from Ford's
-    map data, and the GPS speed beside it. Over the limit (+3 km/h) the number turns amber; it
-    never blinks."""
+    map data, and the GPS speed beside it. Over the limit (+3 km/h) a quiet amber mark shows: the
+    card's edge and a short line under the number. The number keeps its colour; nothing blinks."""
     over = speed > limit + 3
-    s.card((x, y, x + 236, y + 104))
-    r, cx, cy = 40, x + 56, y + 52
+    amber = (255, 176, 32)
+    s.card((x, y, x + 236, y + 104), amber if over else None)
+    r, cx, cy = 40, x + 58, y + 52
     s.d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 204, 0))
     s.d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=(208, 32, 44), width=9)
     s.text((cx, cy + 1), str(limit), 30, True, (0, 0, 0), "mm")
-    colour = (255, 176, 32) if over else s.t["text"]
-    s.text((x + 168, y + 44), str(speed), 44, True, colour, "mm")
-    s.text((x + 168, y + 84), "km/h (GPS)", 14, color=s.t["dim"], anchor="mm")
+    s.text((x + 168, y + 42), str(speed), 44, True, anchor="mm")
+    if over:
+        s.d.rounded_rectangle((x + 146, y + 68, x + 190, y + 72), radius=2, fill=amber)
+    s.text((x + 168, y + 88), "km/h (GPS)", 14, color=s.t["dim"], anchor="mm")
 
 
 def nav_speed(s, speed=68):
@@ -266,7 +285,7 @@ def main(out, lang):
     out.mkdir(parents=True, exist_ok=True)
     pictures = []
     for name, draw_screen in SCREENS.items():
-        screen = Screen(DAY, WORDS[lang])
+        screen = Screen(DAY, WORDS[lang], dual=name == "media")
         draw_screen(screen)
         screen.image.save(out / f"redesign-{name}.png")
         pictures.append((name, screen.image))

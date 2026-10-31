@@ -51,6 +51,15 @@ Measured on the sketches (WCAG contrast):
    sketches and tiles are Swedish by default, English on request (`--lang en`).
 6. **Media and Phone** got bigger rows (80 px) and fewer items; the source list shows four
    sources, each 76 px high.
+7. **The climate tab shows the set temperature** (Rasmus): the driver's, and with Dual on also
+   the passenger's, under the icon in place of the word, with a thin divider: "19,0°" or
+   "19,0° | 21,5°". Ford's climate data has them (`Climate.TEMPDRIVERSET`,
+   `Climate.TEMPCODRIVERSET`, `Climate.DUALBUTTONSTATE`); Ford's own bottom bar
+   (`Climate/ClimateConsoleObject.swf`) already shows both with a divider. That part of the bar
+   loads with the frame at start-up, so it belongs to phase R8.
+8. **Swedish numbers:** temperatures use a decimal comma in Swedish (19,0°), a point in English.
+9. **The over-limit mark on the map was too loud** (Rasmus): now only the speed box's edge and a
+   short line under the number turn amber; the number keeps its colour ([SPEED.md](SPEED.md)).
 
 ## Icons: possible on SYNC 2?
 

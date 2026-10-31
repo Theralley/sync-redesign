@@ -44,7 +44,7 @@ touch targets, icons, language and performance, with before and after numbers.
 
 | Screen | Sketch | New layout | Files on the car | Shown at start-up? |
 |---|---|---|---|---|
-| **Frame** (status bar and area bar on every screen) | all sketches | A thin status bar (title, clock, outside temperature, phone); one area bar at the bottom: Phone, Map, Home, Media, climate temperature | `Apps\AppConsole\AppConsole.swf` (1.1 MB) | **Yes** |
+| **Frame** (status bar and area bar on every screen) | all sketches | A thin status bar (title, clock, outside temperature, phone); one area bar at the bottom with icons: Phone, Map, Home, Media, and Climate showing the set temperature (both with Dual on) | `Apps\AppConsole\AppConsole.swf` (1.1 MB) | **Yes** |
 | **Home** | `redesign-home.png` | Four cards: Now playing with controls (large), Navigation (route, arrival), Phone, Climate | `Apps\Home\Home.swf` (184 KB, Flash 10) | **Yes** |
 | **Media** | `redesign-media.png` | Sources on the left (FM, DAB, USB, Bluetooth, CarPlay), now playing on the right, big controls, presets | `Apps\Media\` 37 Flash files, 3 MB | No |
 | **Phone** | `redesign-phone.png` | Recent calls on the left; Keypad, Contacts, Favourites, Messages as big buttons | `Apps\Phone\` 23 Flash files, 2.7 MB | No |
