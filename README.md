@@ -25,6 +25,8 @@ The plan for a new menu, with a first mock-up: [docs/MENU-PLAN.md](docs/MENU-PLA
 The plan for a completely new interface, with sketches per screen: [docs/REDESIGN-PLAN.md](docs/REDESIGN-PLAN.md).
 Its review from the driver's seat (glance, gloves, climate, icons, language, performance):
 [docs/UX-REVIEW.md](docs/UX-REVIEW.md).
+Speed on the map: [docs/SPEED.md](docs/SPEED.md). A night screen, and album covers over Bluetooth:
+[docs/NIGHT.md](docs/NIGHT.md).
 
 ![A mock-up of a new Apps menu (our own drawing)](docs/mockups/apps-menu-v1.png)
 
@@ -81,8 +83,8 @@ only reads from the car.
 | `tools/make_tiles.py OUTFOLDER [--lang sv\|en]` | Draws the tile pictures for the new Apps menu (our own drawings), Swedish by default, full colour but compact |
 | `tools/make_theme.py CAR_THEMES OUT` | The "Night" colours: the car's own Theme.XML and gradients, recoloured in exactly their format |
 | `tools/preview_screens.py CAR_APPS OUT` | Renders Ford's screens on the Mac (FFDec) as a baseline; keep the pictures private |
-| `tools/mockup_redesign.py OUT [--lang sv\|en]` | Draws the redesign sketches (our own drawings), Swedish by default |
-| `tools/icons.py` | The redesign's one icon family (26 icons), used by the tiles and the sketches |
+| `tools/mockup_redesign.py OUT [--lang sv\|en]` | Draws the redesign sketches (our own drawings), Swedish by default, and prints how much light the night screen gives off |
+| `tools/icons.py` | The redesign's one icon family (26 icons, climate symbols after Ford's own), used by the tiles and the sketches; `python3 -m unittest discover tests` checks it |
 | `tools/build_apps_menu.py CAR_SWF OUT_SWF` | Builds the tiled Apps menu from **your car's own** SyncApps.swf: adds `tools/apps_menu_tiles.as` with FFDec (pinned, in Docker) and checks that only one class changed |
 
 ## Rules

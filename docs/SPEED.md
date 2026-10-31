@@ -5,7 +5,7 @@ map, and perhaps on other screens. Investigation and sketch only; nothing has go
 
 Sketches: [mockups/redesign-nav-speed.png](mockups/redesign-nav-speed.png) (68 km/h on a 70
 road) and [mockups/redesign-nav-speed-over.png](mockups/redesign-nav-speed-over.png)
-(82 km/h: a quiet amber mark).
+(82 km/h: a thin amber line).
 
 ## Where the numbers come from
 
@@ -34,13 +34,13 @@ current speed beside it, and a style that makes the pair readable at a glance.
 
 ## Design
 
-- **One box, bottom left of the map**, where the route card is not: the limit as a Swedish
-  sign (yellow, red ring, black number) and the GPS speed beside it, 44 px bold, "km/h (GPS)"
-  under it.
-- **Over the limit by more than 3 km/h:** a quiet amber mark: the box's left edge and a short
-  line under the number turn amber; the number keeps its colour (Rasmus: the first, all-amber
-  number was too big a warning). It never blinks or sounds: the cluster and the car already
-  warn, and a flashing screen draws the eyes.
+- **One small box, bottom left of the map**, where the route card is not, in one row: the
+  limit as a Swedish sign (yellow, red ring, black number) and the GPS speed beside it, 32 px
+  bold, with "km/h" and "GPS" small after it. 156 x 64 px, about 40% of the first box
+  (236 x 104): the map dominates (Rasmus, twice: the box and the warning were too big).
+- **Over the limit by more than 3 km/h:** the only mark is a thin amber line under the number;
+  the number and the box keep their colours. It never blinks or sounds: the cluster and the car
+  already warn, and a flashing screen draws the eyes.
 - **No GPS fix** (tunnels, garages): the speed shows "–", never a stale number.
 - **No limit in the map data:** the sign is left out, the speed stays.
 - GPS speed can read lower than the speedometer, which by law may read high; the label says

@@ -1,8 +1,8 @@
 """Draw the sketches of a complete SYNC 2 redesign, one per screen (our own drawings).
 
 Usage: python3 tools/mockup_redesign.py docs/mockups [--lang sv|en]
-Writes redesign-<screen>.png (800x480, SYNC 2's screen), a day and a night Home, and
-redesign-overview.png. Swedish is the default language. Needs Pillow.
+Writes redesign-<screen>.png (800x480, SYNC 2's screen), a day and a night Home, the night
+screen (with and without a cover) and redesign-overview.png. Swedish is the default language. Needs Pillow.
 
 Rules the sketches follow (docs/UX-REVIEW.md): one main value per card that reads in under a
 second; text contrast at least 7:1 (main) and 4.5:1 (secondary); touch targets at least 80 px
@@ -21,6 +21,7 @@ FONT = "/System/Library/Fonts/Supplemental/Arial.ttf"
 BOLD = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 TOP, BOTTOM = 44, 64
 TARGET = 80  # smallest touch target, px
+LINE = 3  # the icons' stroke on the controls, px: one line for every size
 
 DAY = {"bg": (14, 16, 20), "panel": (30, 33, 40), "panel2": (44, 48, 58), "text": (245, 246, 248),
        "dim": (170, 176, 188), "bar": (8, 9, 12), "on": (255, 196, 64),
@@ -38,7 +39,9 @@ WORDS = {
            "sources": "Källa", "presets": "Förval", "save": "Spara", "outside": "6° ute", "auto": "Auto",
            "driver": "Förare", "passenger": "Passagerare", "min_temp": "Min temp", "dual": "Dual",
            "max": "Max", "rear": "Bakruta", "ac": "A/C", "max_ac": "Max A/C", "recirc": "Återluft",
-           "fan": "Fläkt", "work": "Jobbet", "garage": "Verkstan", "off": "Av", "decimal": ","},
+           "fan": "Fläkt", "work": "Jobbet", "garage": "Verkstan", "off": "Av", "decimal": ",",
+           "screen": "Vindruta", "map_note": "Fords karta (oförändrad)", "next_turn": "400 m, höger mot E18",
+           "cover_note": "omslag, om bilen får det"},
     "en": {"phone": "Phone", "nav": "Map", "home": "Home", "media": "Media", "climate": "Climate",
            "playing": "Now playing", "route": "Route", "home_dest": "Home", "eta": "24 min, arrive 12:07",
            "recent": "Recent calls", "keypad": "Keypad", "contacts": "Contacts", "favourites": "Favourites",
@@ -47,7 +50,9 @@ WORDS = {
            "sources": "Source", "presets": "Presets", "save": "Save", "outside": "6° outside", "auto": "Auto",
            "driver": "Driver", "passenger": "Passenger", "min_temp": "Min temp", "dual": "Dual",
            "max": "Max", "rear": "Rear", "ac": "A/C", "max_ac": "Max A/C", "recirc": "Recirc",
-           "fan": "Fan", "work": "Work", "garage": "Garage", "off": "Off", "decimal": "."},
+           "fan": "Fan", "work": "Work", "garage": "Garage", "off": "Off", "decimal": ".",
+           "screen": "Windscreen", "map_note": "Ford's map (unchanged)", "next_turn": "400 m, right onto E18",
+           "cover_note": "cover, if the car gets one"},
 }
 
 
@@ -75,20 +80,31 @@ class Screen:
         if accent:
             self.d.rounded_rectangle((box[0], box[1], box[0] + 6, box[3]), radius=3, fill=accent)
 
-    def button(self, box, label=None, icon=None, accent=None, on=None, size=18):
-        """A control: icon above a label (or either alone); `on` draws its state light."""
+    def icon(self, name, cx, cy, size, color=None, weight=LINE):
+        icons.paste(self.image, name, cx, cy, size, color or self.t["text"], weight)
+
+    def button(self, box, label=None, icon=None, accent=None, on=None, size=18, level=None):
+        """A control: icon above a label (or either alone); `on` draws its state lamp; `level`
+        (lit, steps) draws level bars under the icon instead, as Ford's seat heat has."""
         self.d.rounded_rectangle(box, radius=10, fill=self.t["panel2"])
         cx, cy = (box[0] + box[2]) // 2, (box[1] + box[3]) // 2
-        if icon and label:
-            icons.draw(self.d, icon, cx, cy - 11, 30, accent or self.t["text"])
-            self.text((cx, box[3] - 14), label, 14, True, anchor="mm")
+        if icon and (label or level):
+            self.icon(icon, cx, cy - 10, 40, accent)
+            if label:
+                self.text((cx, box[3] - 13), label, 14, True, anchor="mm")
         elif icon:
-            icons.draw(self.d, icon, cx, cy, min(40, box[3] - box[1] - 24), accent or self.t["text"])
+            self.icon(icon, cx, cy, min(44, box[3] - box[1] - 16), accent)
         elif label:
             self.text((cx, cy), label, size, True, anchor="mm")
         if on is not None:  # a lamp in the top right corner, lit when the function is on
             colour = self.t["on"] if on else self.t["bg"]
             self.d.rounded_rectangle((box[2] - 18, box[1] + 8, box[2] - 8, box[1] + 12), radius=2, fill=colour)
+        if level:
+            lit, steps = level
+            for k in range(steps):
+                x = cx - steps * 10 + 4 + k * 20
+                self.d.rounded_rectangle((x, box[3] - 18, x + 12, box[3] - 14), radius=2,
+                                         fill=self.t["on"] if k < lit else self.t["bg"])
 
     def frame(self, area, title):
         t, d = self.t, self.d
@@ -106,7 +122,7 @@ class Screen:
             d.rectangle((x + 24, H - BOTTOM, x + width - 24, H - BOTTOM + 3), fill=t["area"][key])
             icon = {"nav": "map", "home": "home"}.get(key, key)
             colour = t["text"] if active else t["dim"]
-            icons.draw(d, icon, x + width // 2, H - BOTTOM + 24, 24, colour)
+            self.icon(icon, x + width // 2, H - BOTTOM + 24, 24, colour, 2)
             if key == "climate":  # the set temperature in place of the word, both with Dual on
                 cx = x + width // 2
                 if self.dual:
@@ -212,27 +228,38 @@ def climate(s):
         s.text((x0 + 120, y + 66), side, 13, color=s.t["dim"], anchor="mm")
         s.button((x0 + 176, y + 8, x0 + 232, y + 76), "+", size=30)
     s.button((352, y, 448, y + 84), w["auto"], "power", on=True)  # power, top centre
-    y = TOP + 108
-    s.button((12, y, 128, y + 136), w["off"], "seat", red, on=False)  # driver seat heat
-    s.button((136, y, 252, y + 136), w["min_temp"], "min_temp", on=False)
-    for i, icon in enumerate(("air_screen", "air_face", "air_feet")):  # air distribution, three stacked
-        s.button((264, y + i * 46, 396, y + 42 + i * 46), None, icon, on=icon == "air_feet")
-    s.button((404, y, 536, y + 42), "+", size=26)  # fan
-    s.d.rounded_rectangle((404, y + 46, 536, y + 88), radius=10, fill=s.t["panel2"])
-    icons.draw(s.d, "fan", 434, y + 67, 26, s.t["text"])
+    y = TOP + 108  # the middle row, at Ford's widths: narrow side buttons, wide air and fan panels
+    s.button((12, y, 104, y + 136), None, "seat", level=(0, 3))  # driver seat heat, three steps
+    s.button((110, y, 202, y + 136), w["min_temp"], "min_temp", on=False)
+    air_panel(s, 214, y, 394, on=2)
+    s.button((406, y, 586, y + 42), "+", size=26)  # fan
+    s.d.rounded_rectangle((406, y + 46, 586, y + 88), radius=10, fill=s.t["panel2"])
+    s.icon("fan", 446, y + 67, 32)
     for k in range(7):
-        s.d.rectangle((456 + k * 10, y + 76 - k * 3, 462 + k * 10, y + 80), fill=blue if k < 3 else s.t["panel"])
-    s.button((404, y + 92, 536, y + 134), "–", size=26)
-    s.button((548, y, 664, y + 136), w["dual"], "dual", on=False)
-    s.button((672, y, 788, y + 136), w["off"], "seat", red, on=False)  # passenger seat heat
+        s.d.rounded_rectangle((476 + k * 13, y + 77 - k * 4, 484 + k * 13, y + 79), radius=2,
+                              fill=blue if k < 3 else s.t["bg"])
+    s.button((406, y + 92, 586, y + 134), "–", size=26)
+    s.button((598, y, 690, y + 136), w["dual"], "dual", on=s.dual)
+    s.button((696, y, 788, y + 136), None, "seat", level=(0, 3))  # passenger seat heat
     y = H - BOTTOM - 12 - TARGET  # the bottom row, in Ford's order
-    row = [("defrost", None), ("defrost_max", w["max"]), ("rear", w["rear"]), (None, w["auto"]),
-           ("ac", w["ac"]), ("ac_max", w["max_ac"]), ("recirc", w["recirc"])]
+    row = [("defrost", w["screen"]), ("defrost", w["max"]), ("rear", w["rear"]), (None, w["auto"]),
+           ("ac", w["ac"]), ("ac", w["max_ac"]), ("recirc", w["recirc"])]
     width = (W - 24 - 6 * 6) // 7
     for i, (icon, label) in enumerate(row):
         x = 12 + i * (width + 6)
         s.button((x, y, x + width, y + TARGET), label, icon, None, on=label in (w["auto"], w["ac"]),
                  size=20 if icon is None else 18)
+
+
+def air_panel(s, x0, y, x1, on):
+    """Ford's air distribution: three stacked buttons (windscreen, face, feet) and one seated
+    figure drawn across the lower two, as on the car; each row has its own lamp."""
+    for i in range(3):
+        s.button((x0, y + i * 46, x1, y + 42 + i * 46), on=i == on)
+    s.icon("screen_air", x0 + 80, y + 21, 34)
+    s.icon("seated", x1 - 64, y + 92, 84)
+    s.icon("arrow_right", x0 + 78, y + 64, 40)
+    s.icon("arrow_down_right", x0 + 67, y + 111, 36)
 
 
 def nav(s):
@@ -243,8 +270,7 @@ def nav(s):
     for x in range(0, W, 60):
         s.d.line((x, y0, x + 140, y1), fill=(40, 48, 42), width=2)
     s.d.line((0, 330, W, 250), fill=(80, 96, 84), width=10)
-    s.text((W // 2, (y0 + y1) // 2 + 30), "Fords karta (oförändrad)" if w is WORDS["sv"] else "Ford's map (unchanged)",
-           16, color=(120, 140, 125), anchor="mm")
+    s.text((W // 2, (y0 + y1) // 2 + 30), w["map_note"], 16, color=(120, 140, 125), anchor="mm")
     s.card((12, y0 + 12, 340, y0 + 112), a["nav"])
     s.text((36, y0 + 26), w["in"], 18, color=s.t["dim"])
     s.text((36, y0 + 56), w["turn"], 24, True)
@@ -255,26 +281,61 @@ def nav(s):
     s.button((W - 92, y0 + 100, W - 12, y0 + 180), "–", size=30)
 
 
+SPEED_BOX = (156, 64)  # w, h: about 40% of the first box (236 x 104), so the map dominates
+
+
 def speed_box(s, x, y, limit, speed):
-    """The speed box on the map: the speed limit as a Swedish sign (yellow, red ring) from Ford's
-    map data, and the GPS speed beside it. Over the limit (+3 km/h) a quiet amber mark shows: the
-    card's edge and a short line under the number. The number keeps its colour; nothing blinks."""
+    """The speed box on the map, in one row: the speed limit as a Swedish sign (yellow, red ring)
+    from Ford's map data, and the GPS speed beside it. Over the limit (+3 km/h) the only mark is a
+    thin amber line under the number; the number keeps its colour and nothing blinks."""
     over = speed > limit + 3
-    amber = (255, 176, 32)
-    s.card((x, y, x + 236, y + 104), amber if over else None)
-    r, cx, cy = 40, x + 58, y + 52
+    s.card((x, y, x + SPEED_BOX[0], y + SPEED_BOX[1]))
+    r, cx, cy = 24, x + 34, y + SPEED_BOX[1] // 2
     s.d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 204, 0))
-    s.d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=(208, 32, 44), width=9)
-    s.text((cx, cy + 1), str(limit), 30, True, (0, 0, 0), "mm")
-    s.text((x + 168, y + 42), str(speed), 44, True, anchor="mm")
+    s.d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=(208, 32, 44), width=5)
+    s.text((cx, cy + 1), str(limit), 20, True, (0, 0, 0), "mm")
+    left = x + 68
+    s.text((left, cy + 1), str(speed), 32, True, anchor="lm")
+    width = s.d.textlength(str(speed), font=font(32, True))
+    s.text((left + width + 6, cy - 7), "km/h", 12, color=s.t["dim"], anchor="lm")
+    s.text((left + width + 6, cy + 9), "GPS", 12, color=s.t["dim"], anchor="lm")
     if over:
-        s.d.rounded_rectangle((x + 146, y + 68, x + 190, y + 72), radius=2, fill=amber)
-    s.text((x + 168, y + 88), "km/h (GPS)", 14, color=s.t["dim"], anchor="mm")
+        s.d.line((left + 1, cy + 20, left + width - 1, cy + 20), fill=(255, 176, 32), width=2)
 
 
 def nav_speed(s, speed=68):
     nav(s)
-    speed_box(s, 12, H - BOTTOM - 116, 70, speed)
+    speed_box(s, 12, H - BOTTOM - 12 - SPEED_BOX[1], 70, speed)
+
+
+def night_minimal(s, cover=False):
+    """The night screen: almost black, only the clock, the song and, with a route, the next turn,
+    all in dim grey. A touch anywhere brings the full screen back; calls and the reversing camera
+    always take over, as from Ford's own "display off"."""
+    s.image.paste((0, 0, 0), (0, 0, W, H))
+    clock, song, faint = (118, 122, 130), (100, 104, 112), (72, 76, 84)
+    s.icon("turn_right", 316, 84, 30, tuple(round(c * 0.55) for c in s.t["area"]["nav"]))
+    s.text((340, 84), s.w["next_turn"], 18, color=song, anchor="lm")
+    s.text((W // 2, 200), "22:47", 112, color=clock, anchor="mm")
+    if cover:  # a stand-in picture (our own), dimmed like the rest
+        x0, y0 = round(W / 2 - (82 + s.d.textlength("Money For Nothing", font=font(22))) / 2), 300
+        for k in range(64):
+            shade = tuple(round(c * (0.25 + 0.3 * k / 64)) for c in (180, 90, 70))
+            s.d.line((x0, y0 + k, x0 + 63, y0 + k), fill=shade)
+        s.d.ellipse((x0 + 18, y0 + 14, x0 + 46, y0 + 42), outline=(30, 30, 34), width=3)
+        s.text((W // 2, y0 + 92), s.w["cover_note"], 11, color=faint, anchor="mm")
+        s.text((x0 + 82, y0 + 18), "Money For Nothing", 22, color=song, anchor="lm")
+        s.text((x0 + 82, y0 + 46), "Dire Straits", 18, color=faint, anchor="lm")
+    else:
+        s.text((W // 2, 312), "Money For Nothing", 22, color=song, anchor="mm")
+        s.text((W // 2, 342), "Dire Straits", 18, color=faint, anchor="mm")
+
+
+def light(image):
+    """The screen's mean light: average relative luminance of its pixels (0 black, 1 white)."""
+    lin = [((v / 255 + 0.055) / 1.055) ** 2.4 if v > 10 else v / 255 / 12.92 for v in range(256)]
+    r, g, b = (sum(lin[v] * n for v, n in enumerate(band.histogram())) for band in image.split())
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / (image.width * image.height)
 
 
 SCREENS = {"home": home, "media": media, "phone": phone, "climate": climate, "nav": nav}
@@ -284,20 +345,25 @@ def main(out, lang):
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     pictures = []
+
+    def save(name, draw_screen, theme=DAY, **options):
+        screen = Screen(theme, WORDS[lang], dual=name == "media")
+        draw_screen(screen, **options)
+        screen.image.save(out / f"redesign-{name}.png")
+        return screen.image
+
     for name, draw_screen in SCREENS.items():
-        screen = Screen(DAY, WORDS[lang], dual=name == "media")
-        draw_screen(screen)
-        screen.image.save(out / f"redesign-{name}.png")
-        pictures.append((name, screen.image))
-    for name, speed in (("nav-speed", 68), ("nav-speed-over", 82)):
-        screen = Screen(DAY, WORDS[lang])
-        nav_speed(screen, speed)
-        screen.image.save(out / f"redesign-{name}.png")
-    night = Screen(NIGHT, WORDS[lang])
-    home(night)
-    night.image.save(out / "redesign-home-night.png")
-    pictures.append(("home, night", night.image))
-    sheet = Image.new("RGB", (W + 30, 3 * (H // 2 + 30)), (255, 255, 255))
+        image = save(name, draw_screen)
+        if name != "nav":
+            pictures.append((name, image))
+    pictures.append(("nav, speed", save("nav-speed", nav_speed, speed=68)))
+    save("nav-speed-over", nav_speed, speed=82)
+    night_home = save("home-night", home, NIGHT)
+    pictures.append(("home, night", night_home))
+    pictures.append(("night screen", save("night-minimal", night_minimal, NIGHT)))
+    pictures.append(("night screen, cover", save("night-cover", night_minimal, NIGHT, cover=True)))
+    print(f"night screen: {light(pictures[-2][1]) / light(night_home):.0%} of the night Home screen's light")
+    sheet = Image.new("RGB", (W + 30, 4 * (H // 2 + 30)), (255, 255, 255))
     for i, (name, image) in enumerate(pictures):
         x, y = (i % 2) * (W // 2 + 10), (i // 2) * (H // 2 + 30)
         sheet.paste(image.resize((W // 2, H // 2), Image.LANCZOS), (x, y + 22))

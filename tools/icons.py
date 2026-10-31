@@ -1,19 +1,28 @@
 """One icon family for the redesign (our own drawings): the same line weight, rounded ends and
 24-unit grid everywhere, so tiles, the area bar and the climate controls read as one set.
 
-draw(draw, name, cx, cy, size, color): size is the icon's width in pixels; the stroke is 1/12
-of it (2 units of 24), never thinner than 2 px, so it survives SYNC's 16-bit screen.
+draw(draw, name, cx, cy, size, color, width=None): size is the icon's width in pixels; the stroke
+is 1/12 of it (2 units of 24), never thinner than 2 px, so it survives SYNC's 16-bit screen.
+paste(image, name, cx, cy, size, color, weight=None) draws it with smooth edges; weight sets the
+stroke in pixels, so icons of different sizes on one screen share one line.
+
+The climate symbols follow the ones on Ford's own climate screen (and ISO 2575), so the hand and
+eye find them as before: a windscreen with rising heat, a rear window, a seat with heat, a car
+with a loop for recirculation, a four-bladed fan. The fan's blades are each mirror-symmetric, so
+the fan as a whole is too and cannot read as a hooked cross (tests/test_icons.py checks it).
 """
 import math
 
+from PIL import Image, ImageDraw
+
 NAMES = ("phone", "map", "home", "media", "climate", "apps", "settings", "carplay", "video", "files",
-         "restart", "voice", "seat", "defrost", "defrost_max", "rear", "ac", "ac_max", "recirc", "fan",
-         "air_face", "air_feet", "air_screen", "power", "dual", "min_temp")
+         "restart", "voice", "seat", "defrost", "rear", "ac", "recirc", "fan", "seated", "screen_air",
+         "power", "dual", "min_temp", "arrow_right", "arrow_down_right", "turn_right")
 
 
-def draw(d, name, cx, cy, size, color):
+def draw(d, name, cx, cy, size, color, width=None):
     u = size / 24.0  # one grid unit
-    w = max(2, round(2 * u))
+    w = width or max(2, round(2 * u))
 
     def p(x, y):  # grid (0..24) to pixels
         return (cx + (x - 12) * u, cy + (y - 12) * u)
@@ -38,10 +47,20 @@ def draw(d, name, cx, cy, size, color):
     def tri(*points):
         d.polygon([p(*pt) for pt in points], fill=color)
 
-    def waves(x0, y0):  # three heat waves
-        for i in range(3):
-            x = x0 + i * 3.5
-            line((x, y0), (x + 1.2, y0 - 2), (x, y0 - 4), (x + 1.2, y0 - 6))
+    def wave(x, y0, y1, amp=0.9, turns=1.0):  # a wavy line rising from y0 to y1
+        n = 32
+        line(*[(x + amp * math.sin(2 * math.pi * turns * k / n), y0 + (y1 - y0) * k / n) for k in range(n + 1)])
+
+    def head(x, y, angle, length=3.2):  # an open arrowhead with its tip at (x, y), pointing at angle
+        line(p2(x, y, length, angle + 140), (x, y), p2(x, y, length, angle - 140))
+
+    def windscreen(top, bottom, half=17):  # a windscreen seen from inside: two arcs of one circle
+        centre = bottom + 22
+        r0, r1 = centre - top, centre - bottom
+        arc(12, centre, r0, 270 - half, 270 + half)
+        arc(12, centre, r1, 270 - half, 270 + half)
+        for side in (-1, 1):
+            line(p2(12, centre, r1, 270 + side * half), p2(12, centre, r0, 270 + side * half))
 
     if name == "phone":
         box(7, 2.5, 17, 21.5, 3); line((10.5, 18.5), (13.5, 18.5))
@@ -76,43 +95,55 @@ def draw(d, name, cx, cy, size, color):
         arc(12, 12, 8.5, -50, 250); tri((17.5, 3.2), (21.8, 7.6), (16, 9.5))
     elif name == "voice":
         box(9, 2.5, 15, 14.5, 3); arc(12, 9.5, 7, 20, 160); line((12, 16.5), (12, 21)); line((8.5, 21), (15.5, 21))
-    elif name == "seat":
-        line((7, 3.5), (8.5, 14), (17, 14), (18.5, 20.5)); line((8.5, 14), (6.5, 20.5)); waves(10.5, 10)
-    elif name in ("defrost", "defrost_max"):
-        line((3, 16), (6, 8), (18, 8), (21, 16), (3, 16)); waves(8.5, 14.5)
-        if name == "defrost_max":
-            line((4, 20.5), (20, 20.5))
-    elif name == "rear":
-        box(3, 6, 21, 17, 2); waves(8.5, 15); line((4, 20.5), (20, 20.5))
-    elif name in ("ac", "ac_max"):  # a snowflake
-        for a in (30, 90, 150, 210, 270, 330):
-            line((12, 12), p2(12, 12, 9.5, a))
-            line(p2(12, 12, 6, a), p2(*p2(12, 12, 6, a), 3, a + 40))
-            line(p2(12, 12, 6, a), p2(*p2(12, 12, 6, a), 3, a - 40))
-        if name == "ac_max":
-            circle(12, 12, 3)
-    elif name == "recirc":
-        line((3, 17.5), (21, 17.5)); line((5, 17.5), (7, 11), (17, 11), (19, 17.5))
-        arc(12, 8.5, 4.5, 180, 360); tri((15.6, 9.6), (18.4, 8), (17, 5.5))
-    elif name == "fan":  # three rounded blades around a hub
-        circle(12, 12, 2.2, True)
-        for a in (-90, 30, 150):
-            blade = [p2(12, 12, 2.5, a - 20), p2(12, 12, 6, a - 32), p2(12, 12, 9.5, a - 22),
-                     p2(12, 12, 10, a + 5), p2(12, 12, 7, a + 22), p2(12, 12, 2.5, a + 20)]
-            d.polygon([p(*pt) for pt in blade], outline=color, width=w)
-    elif name in ("air_face", "air_feet", "air_screen"):
-        circle(14.5, 4.5, 2.2); line((14.5, 7.5), (13, 14), (18, 14), (19.5, 21)); line((13, 14), (8.5, 19))
-        start, end = {"air_face": ((2.5, 9), (10, 6)), "air_feet": ((2.5, 13), (7, 19.5)),
-                      "air_screen": ((2.5, 11), (7, 2.5))}[name]
-        line(start, end)
-        angle = math.degrees(math.atan2(end[1] - start[1], end[0] - start[0]))
-        tri(end, p2(*end, 3.2, angle + 150), p2(*end, 3.2, angle - 150))
+    elif name == "seat":  # Ford's heated seat: the seat from the side, heat rising in front of the back
+        line((20, 2.5), (17, 18), (4.5, 18), (3, 14.5))  # backrest and cushion
+        line((17, 18), (18.5, 21.5))
+        for x in (5.5, 9.5, 13.5):
+            wave(x, 14, 3.5, 0.8)
+    elif name == "defrost":  # Ford's windscreen defrost: heat rising out of the windscreen
+        windscreen(3.5, 20)
+        for x in (8, 12, 16):
+            wave(x, 16.5, 8, 0.7)
+    elif name == "rear":  # the rear window, the same heat rising out of it
+        box(2.5, 4.5, 21.5, 19.5, 2.5)
+        for x in (8, 12, 16):
+            wave(x, 16, 8, 0.7)
+    elif name == "ac":  # a snowflake
+        for a in (30, 90, 150):
+            line(p2(12, 12, 10, a), p2(12, 12, 10, a + 180))
+        for a in range(30, 390, 60):
+            tip = p2(12, 12, 6.5, a)
+            line(p2(*tip, 3, a + 135), tip, p2(*tip, 3, a - 135))
+    elif name == "recirc":  # Ford's recirculation: a car with the air going round inside it
+        line((1.5, 17.5), (1.5, 13.5), (5, 12), (8.5, 6.5), (15.5, 6.5), (19.5, 12), (22.5, 13), (22.5, 17.5))
+        arc(12, 14.5, 4, 215, 505)
+        head(*p2(12, 14.5, 4, 145), 235, 2.8)
+    elif name == "fan":  # four blades, each mirror-symmetric about its own axis, round a hub
+        circle(12, 12, 2, True)
+        for a in (0, 90, 180, 270):
+            base, end, r = p2(12, 12, 3.4, a), p2(12, 12, 7.6, a), 2.6  # a point at the hub, a round end
+            g = math.degrees(math.acos(r / 4.2))  # where the straight sides meet the round end
+            line(base, *[p2(*end, r, a + 180 + g + k * (360 - 2 * g) / 24) for k in range(25)], base)
+    elif name == "seated":  # Ford's air distribution figure: a seated driver facing the windscreen
+        circle(16.5, 3.8, 2.6)
+        line((15.5, 8), (13.5, 15.5), (6.5, 15.5), (4.5, 21.5))  # back, thigh, shin
+        line((14.8, 10.5), (10, 12.5))  # arm
+    elif name == "screen_air":  # air to the windscreen: the windscreen with air going up into it
+        windscreen(2.5, 11)
+        line((12, 21.5), (12, 14)); head(12, 14, -90)
     elif name == "power":
         arc(12, 13, 8, -55, 235); line((12, 3), (12, 12))
-    elif name == "dual":
-        line((8, 4), (8, 20)); line((16, 4), (16, 20)); line((3, 12), (8, 12)); line((16, 12), (21, 12))
+    elif name == "dual":  # two thermometers: driver and passenger each set a temperature of their own
+        for x, level in ((7, 10), (17, 7)):
+            box(x - 2.4, 2.5, x + 2.4, 15.5, 2.4); circle(x, 18.5, 3.2, True); line((x, 15), (x, level))
     elif name == "min_temp":
-        box(9.5, 2.5, 14.5, 16, 2.5); circle(12, 18.5, 3.5, True); line((17.5, 6), (21, 6))
+        box(6.5, 2.5, 11.5, 16, 2.5); circle(9, 18.5, 3.5, True); line((15.5, 9), (21, 9))
+    elif name == "arrow_right":
+        line((2.5, 12), (21, 12)); head(21, 12, 0, 5)
+    elif name == "arrow_down_right":
+        line((3, 5), (19, 19)); head(19, 19, 41, 5)
+    elif name == "turn_right":
+        line((7, 21.5), (7, 13), (8.5, 10.2), (11.5, 9), (20, 9)); head(20, 9, 0, 4.5)
     else:
         raise ValueError(name)
 
@@ -121,3 +152,13 @@ def p2(cx, cy, r, degrees):
     """A grid point at radius r and angle degrees around (cx, cy)."""
     a = math.radians(degrees)
     return (cx + r * math.cos(a), cy + r * math.sin(a))
+
+
+def paste(image, name, cx, cy, size, color, weight=None, scale=4):
+    """Draw an icon onto image with smooth edges: drawn `scale` times larger, then reduced."""
+    n = int(size * 1.5) + 4  # room for strokes that reach past the grid
+    mask = Image.new("L", (n * scale, n * scale), 0)
+    stroke = round((weight or max(2, size / 12)) * scale)
+    draw(ImageDraw.Draw(mask), name, n * scale / 2, n * scale / 2, size * scale, 255, stroke)
+    x0, y0 = round(cx - n / 2), round(cy - n / 2)
+    image.paste(color, (x0, y0, x0 + n, y0 + n), mask.resize((n, n), Image.LANCZOS))

@@ -98,7 +98,7 @@ the next.
 | R5 | **Navigation overlays** (turn card, buttons) and the **speed box**: the speed limit from Ford's map data beside the GPS speed ([SPEED.md](SPEED.md)) | Medium |
 | R6 | **Start-up rehearsal:** change one start-up file that nobody sees (the goodbye animation's still) and undo it, to prove recovery where it matters | Medium |
 | R7 | **Home** (start-up): the four cards | High |
-| R8 | **Frame** (`AppConsole.swf`, start-up, on every screen) | Highest |
+| R8 | **Frame** (`AppConsole.swf`, start-up, on every screen), including the automatic **night screen** in Ford's `BackLight` ([NIGHT.md](NIGHT.md)); tried first by hand from an Apps menu tile | Highest |
 | R9 | **Quicker feel:** fewer animations; measure `Desktop.exe` with the drive logger before and after | Medium |
 
 ## Risks and the way back

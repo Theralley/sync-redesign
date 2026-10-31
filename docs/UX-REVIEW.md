@@ -45,8 +45,8 @@ Measured on the sketches (WCAG contrast):
    bar is 64 px high with icons.
 3. **Labels in capitals.** "NOW PLAYING", "NAVIGATION" and the like became sentence case.
 4. **No icon family.** Tiles, area bar and climate used unrelated symbols. **Changed:** one
-   family of 26 icons. Its first fan looked like a swastika (four hooked blades); it now has
-   three rounded blades.
+   family of 26 icons. Its first fan looked like a swastika (four hooked blades); see finding 11
+   for the fan it has now.
 5. **English text on a Swedish car.** SYNC itself already runs in Swedish. **Changed:**
    sketches and tiles are Swedish by default, English on request (`--lang en`).
 6. **Media and Phone** got bigger rows (80 px) and fewer items; the source list shows four
@@ -58,8 +58,32 @@ Measured on the sketches (WCAG contrast):
    (`Climate/ClimateConsoleObject.swf`) already shows both with a divider. That part of the bar
    loads with the frame at start-up, so it belongs to phase R8.
 8. **Swedish numbers:** temperatures use a decimal comma in Swedish (19,0°), a point in English.
-9. **The over-limit mark on the map was too loud** (Rasmus): now only the speed box's edge and a
-   short line under the number turn amber; the number keeps its colour ([SPEED.md](SPEED.md)).
+9. **The over-limit mark on the map was too loud** (Rasmus): first the box's edge and a line
+   under the number turned amber instead of the whole number.
+10. **The speed box was still too big, and its warning too** (Rasmus): now one row, 156 x 64 px
+    (about 40% of the first box), and over the limit only a thin amber line under the number
+    ([SPEED.md](SPEED.md)). The map dominates.
+11. **The climate icons looked bad** (Rasmus): small, jagged, and some unrecognisable (three tiny
+    figures for the air, two bars for Dual). **Changed:** drawn again from Ford's own symbols on
+    the car's climate screen, as one family with one line (3 px) and smooth edges:
+    - windscreen and rear window with the heat rising inside them, as Ford's; Max defrost and
+      Max A/C use the same symbol as their neighbour, with the word;
+    - the heated seat from the side with rising heat, and Ford's three level bars under it in
+      place of the word "Av";
+    - recirculation: a car with the air going round inside it;
+    - the air distribution as on the car: one seated figure across the three buttons, with an
+      arrow to the face and one to the feet, and the windscreen at the top;
+    - Dual: two thermometers (two temperatures of their own);
+    - the fan: four blades, each mirror-symmetric, like Ford's. A test
+      (`tests/test_icons.py`) checks that the fan equals its mirror image, which a hooked cross
+      or a triskele never does; the first fan fails it.
+
+    The middle row now has Ford's widths: narrow side buttons (92 px, still above the 80 px
+    target) and wide air and fan panels (180 px), so every control sits closer to where it is
+    on the car.
+12. **The screen is far too bright at night** (Rasmus). **Proposed:** a night screen with only
+    the clock, the song and the next turn, about an eighth of the light ([NIGHT.md](NIGHT.md)).
+    Until then, Ford's own Auto dim and its offset −5 make the most of what is there.
 
 ## Icons: possible on SYNC 2?
 
