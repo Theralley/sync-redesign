@@ -5,7 +5,9 @@ steps that can always be undone. The companion of
 [sync2-auto-magic](https://github.com/Theralley/sync2-auto-magic), which builds the USB job
 sticks this project uses to read from and write to the car.
 
-**Status (2026-10-31):** planning and data collection. Nothing on the car has been changed.
+**Status (2026-10-31):** the first drive log is in ([docs/FINDINGS.md](docs/FINDINGS.md)): the colours
+are a plain XML file and four gradient pictures, and the full Lincoln skin is on the car.
+Nothing on the car has been changed.
 
 ## What SYNC 2's screens are
 
