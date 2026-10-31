@@ -53,7 +53,7 @@ car, parked.
 | S1 | **Baseline**: the same run logs processor load per program and free memory every 10 s. A run without the file copy gives cleaner numbers | 5 min tapping | Numbers per screen change |
 | S2 | **Wallpapers**: a generator for 800x378 pictures (dark, plain, modern), added with SYNC's own wallpaper editor | Settings > Display | Shows, no hacking |
 | S3 | **Map the screens on the Mac**: which file loads which, where pictures and colours are, whether a shared theme file exists. A byte-exact round trip of one screen | None | Unchanged file rebuilt identical |
-| S4 | **Recovery rehearsal**: install an *unchanged* screen with the skin job, then restore it, both by stick | Two sticks | Reports match the hashes |
+| S4 | **Recovery rehearsal** (the first theme change and its undo stick do this, 2026-10-31): install an *unchanged* screen with the skin job, then restore it, both by stick | Two sticks | Reports match the hashes |
 | S5 | **First change**: new pictures in one screen that is not shown at start-up, then restore | Test, restore | Works, restore works, cold start OK |
 | S6 | **Theme**: `Sync\Themes\Theme.XML` and its four gradient pictures set the colours of every area (found 2026-10-31), so a recolour is five data files. Button art after that | Full test list | All areas, day and night |
 | S7 | **Quicker feel**: shorter transitions, lighter pictures, keeping every script that runs when an animation ends | Measure again | Faster than S1, nothing stuck |

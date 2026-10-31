@@ -6,8 +6,9 @@ steps that can always be undone. The companion of
 sticks this project uses to read from and write to the car.
 
 **Status (2026-10-31):** the first drive log is in ([docs/FINDINGS.md](docs/FINDINGS.md)): the colours
-are a plain XML file and four gradient pictures, and the full Lincoln skin is on the car.
-Nothing on the car has been changed.
+are a plain XML file and four gradient pictures, and the full Lincoln skin is on the car. The
+first change (Lincoln's colours, with its undo stick) is built and rehearsed on the Mac, and
+not yet run in the car.
 
 ## What SYNC 2's screens are
 
@@ -19,6 +20,22 @@ Nothing on the car has been changed.
   changed screens do load.
 
 The whole plan, with what is known and the safety rules: [docs/PLAN.md](docs/PLAN.md).
+How to undo any change, step by step: [docs/RECOVERY.md](docs/RECOVERY.md).
+The plan for a new menu, with a first mock-up: [docs/MENU-PLAN.md](docs/MENU-PLAN.md).
+
+![A mock-up of a new Apps menu (our own drawing)](docs/mockups/apps-menu-v1.png)
+
+## Changing the colours
+
+With sync2-auto-magic, after a drive log:
+
+```sh
+python3 -m s2am job theme --preset lincoln --serial YOURSERIAL      # the change stick
+python3 -m s2am job theme --restore <that job> --serial YOURSERIAL  # its undo stick, built at once
+```
+
+The change backs up the five theme files on the car and the stick, copies the new ones in and
+restarts SYNC; the Mac checks every byte after import. The undo stick carries the originals.
 
 ## Collecting data from the car
 
@@ -41,6 +58,7 @@ only reads from the car.
 | Tool | What it does |
 |---|---|
 | `tools/swftags.py FILE.swf` | Lists an SWF's tags, its exported ActionScript 2 classes and the strings in its code. No Java needed |
+| `tools/mockup_apps_menu.py OUT.png` | Draws the Apps menu mock-up (our own drawing, Pillow) |
 
 ## Rules
 
