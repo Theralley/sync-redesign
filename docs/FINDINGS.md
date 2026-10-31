@@ -86,6 +86,17 @@ names from the registry), all hidden until opened. Their sub-screens load only w
 for Phone the call history, keypad, phonebook, quick dial and messages. A changed sub-screen
 can at worst fail when opened; a changed main screen is read at every start.
 
+## The first bundle in the car (2026-10-31, evening)
+
+- All five parts went on and were verified byte for byte after import, and the undo bundle
+  put everything back the same way. The bundle route works in the car.
+- **SYNC kept running with a changed Ford file** (the call history, R3b) on the car. Whether
+  the screen itself shows correctly is the next visit's question: the call history loads only
+  when it is opened.
+- **Theme.XML changes are hard to see.** Night dims the glow and strengthens the area buttons a
+  little; Rasmus did not notice it. A redesign that is meant to be seen needs the screens
+  themselves (R3 onwards), not the colours file.
+
 ## Next
 
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the

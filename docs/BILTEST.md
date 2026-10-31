@@ -3,9 +3,30 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
-## Allt på en gång (samlingsjobbet)
+## Andra turen (2026-11-01)
 
-**SYNC-stickan** bär `bundle-1c35`, som kör fem jobb i en tur, i den här ordningen:
+Första turen gick igenom: alla delar ligger verifierade byte för byte, och ångra-stickan
+återställde allt. Syntes gjorde bara Apps-rutorna. Night-färgerna kom på men syns knappt
+(bara glöden och områdesknapparna ändras), och samtalshistoriken hann inte kontrolleras.
+
+En använd sticka installerar inget igen: SyncExtPack döper om `install.bin` till
+`installed.bin`. Därför är båda stickorna nu lagda med nya jobb:
+
+- **SYNC-stickan:** `bundle-5dbf`, med Night, svenska rutor och stora rader i Senaste samtal
+  (ingen städning den här gången).
+- **UNTITLED 2:** `bundle-9ea6`, som ångrar allt.
+
+I bilen:
+
+1. Parkerad, tändningen på. Stoppa i SYNC-stickan och vänta tills SYNC har startat om.
+2. **Telefon, Senaste samtal:** tre stora rader per sida i stället för fem? Ta ett foto.
+   Kontrollerna står under steg 7 nedan.
+3. Ser något fel ut: stoppa i UNTITLED 2.
+4. Ta med stickan eller stickorna till Macen.
+
+## Allt på en gång (samlingsjobbet, första turen)
+
+**SYNC-stickan** bar `bundle-1c35`, som körde fem jobb i en tur, i den här ordningen:
 
 1. Night-färgerna (`theme-fd69`)
 2. SyncExtPacks egen Apps-meny tillbaka (`appmenu-83d5`), för att
@@ -16,7 +37,7 @@ simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 Stoppar en del körs inget efter den, och Macen säger vilken och varför. Varje del verifieras
 för sig när stickan importeras.
 
-**UNTITLED 2** bär `bundle-8737`, som ångrar allt i en tur: Fords samtalshistorik,
+**UNTITLED 2** bar `bundle-8737`, som ångrade allt i en tur: Fords samtalshistorik,
 SyncExtPacks egen Apps-meny och Fords färger.
 
 I bilen:
