@@ -28,9 +28,9 @@ Ser något fel ut: kör steget **ångra** (tabellen). Startar inte skärmen alls
 - Steg 2 och 3 hör ihop: vår meny kontrolleras mot SyncExtPacks egen. Körs steg 3 utan steg 2
   stoppar jobbet sig självt, och inget ändras.
 - Steg 2–3 kan hoppas över om de engelska rutorna duger. Steg 4 kan tas när som helst sist.
-- **Ingen andra hel sticka finns** (2 GB-stickan har läsfel). Ångra-jobben är byggda och
-  repeterade och läggs på samma sticka efter en tur till Macen. Night använder samma väg som
-  Lincoln-färgerna, som redan ändrats och ångrats i bilen.
+- **Stickorna nu:** 32 GB (SYNC) bär steg 1, Night. 2 GB (UNTITLED 2, omformaterad och hel)
+  bär ångra för Night, `theme-78ed`. Båda är lästa tillbaka byte för byte. Steg 0 är gjort:
+  Apps-menyn är verifierad på bilen, 11 filer byte för byte.
 
 ## Kontroller i bilen
 
