@@ -26,7 +26,7 @@ The plan for a completely new interface, with sketches per screen: [docs/REDESIG
 Its review from the driver's seat (glance, gloves, climate, icons, language, performance):
 [docs/UX-REVIEW.md](docs/UX-REVIEW.md).
 Speed on the map: [docs/SPEED.md](docs/SPEED.md). A night screen, and album covers over Bluetooth:
-[docs/NIGHT.md](docs/NIGHT.md).
+[docs/NIGHT.md](docs/NIGHT.md). Spotify on SYNC 2, which way: [docs/SPOTIFY.md](docs/SPOTIFY.md).
 
 ![A mock-up of a new Apps menu (our own drawing)](docs/mockups/apps-menu-v1.png)
 
