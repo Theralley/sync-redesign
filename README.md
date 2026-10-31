@@ -87,7 +87,7 @@ only reads from the car.
 | `tools/mockup_redesign.py OUT [--lang sv\|en]` | Draws the redesign sketches (our own drawings), Swedish by default, and prints how much light the night screen gives off |
 | `tools/icons.py` | The redesign's one icon family (33 icons, climate and call symbols after Ford's own), used by the tiles, the sketches and the screens; `python3 -m unittest discover tests` checks it |
 | `tools/swf_bitmaps.py IN.swf --list` / `IN.swf OUT.swf ID=pic.png ...` | Replaces pictures inside a Flash file at their exact size and proves every other tag stayed byte for byte. No Java |
-| `tools/build_phone_history.py CAR_SWF OUT_SWF` | Phase R3a: **your car's own** call history screen with our icons (eight pictures, no code). Refuses a file with other pictures than expected. Keep OUT outside this repository: it still holds Ford's code |
+| `tools/build_phone_history.py CAR_SWF OUT_SWF [--rows] [--preview DIR]` | Phase R3: **your car's own** call history screen with our icons (R3a: eight pictures, no code) and, with `--rows`, big rows (R3b: 76 px, three to a page, the name 26 px; two numbers changed in place, the row's layout through FFDec's XML form). Checks every tag and reads every value back; refuses a file that is not the screen it was made for. Keep OUT and DIR outside this repository: they hold Ford's code and artwork |
 | `tools/build_apps_menu.py CAR_SWF OUT_SWF` | Builds the tiled Apps menu from **your car's own** SyncApps.swf: adds `tools/apps_menu_tiles.as` with FFDec (pinned, in Docker) and checks that only one class changed |
 
 ## Rules

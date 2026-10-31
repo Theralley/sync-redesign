@@ -25,6 +25,8 @@ Ser något fel ut: kör steget **ångra** (tabellen). Startar inte skärmen alls
 | 3 | `appmenu-1e46` | Vår Apps-meny igen, med svenska rutor i den nya ikonfamiljen | Ja | `appmenu-1742` |
 | 4 | `clean-0831` | Tar bort s2am:s gamla jobbmappar på bilen (omkring 2,2 MB); backuperna stannar | Nej | behövs inte |
 | 5 | `screen-78f6` | R3a: samtalshistoriken (Telefon, Senaste samtal) med våra ikoner; koden orörd | Ja | `screen-e9a6` |
+| 6 | `screen-e9a6` | Ångra R3a: Fords samtalshistorik tillbaka. Visar att ångra fungerar i bilen innan koden ändras | Ja | |
+| 7 | `screen-6ffe` | R3b: samtalshistoriken med stora rader (76 px, tre per sida, namnet 26 px) och våra ikoner | Ja | `screen-4dca` |
 
 - Steg 2 och 3 hör ihop: vår meny kontrolleras mot SyncExtPacks egen. Körs steg 3 utan steg 2
   stoppar jobbet sig självt, och inget ändras.
@@ -59,6 +61,17 @@ Ser något fel ut: kör steget **ångra** (tabellen). Startar inte skärmen alls
 - [ ] Telefon i övrigt, ett inkommande samtal och backkameran som vanligt.
 - [ ] Öppnas inte skärmen, eller ser den fel ut: ångra med `screen-e9a6`. Resten av SYNC
       påverkas inte; skärmen laddas bara när den öppnas.
+
+**Efter steg 6:** Senaste samtal ser ut som förut (Fords egen).
+
+**Efter steg 7 (R3b, stora rader):**
+- [ ] Senaste samtal visar tre stora rader i stället för fem; namnen är större.
+- [ ] Ikonen, namnet och pilarna står mitt i raden; bakgrunden fyller hela raden.
+- [ ] Bläddra ner och upp: tre rader per sida. Under körning visar SYNC högst fyra sidor.
+- [ ] Välj ett samtal och "Ring": samtalet går. Flikarna (Alla, Utgående, Inkommande, Missade)
+      fungerar.
+- [ ] Ser raderna fel ut (överlappar, text klipps): ångra med `screen-4dca`, och ta gärna ett
+      foto först.
 
 ## Inte byggbart än (och vad som saknas)
 
