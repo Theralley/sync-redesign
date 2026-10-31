@@ -24,6 +24,7 @@ Ser något fel ut: kör steget **ångra** (tabellen). Startar inte skärmen alls
 | 2 | `appmenu-83d5` | SyncExtPacks egen Apps-meny tillbaka: steg 1 av 2 för svenska rutor | Ja | behövs inte (det är ursprunget) |
 | 3 | `appmenu-1e46` | Vår Apps-meny igen, med svenska rutor i den nya ikonfamiljen | Ja | `appmenu-1742` |
 | 4 | `clean-0831` | Tar bort s2am:s gamla jobbmappar på bilen (omkring 2,2 MB); backuperna stannar | Nej | behövs inte |
+| 5 | `screen-78f6` | R3a: samtalshistoriken (Telefon, Senaste samtal) med våra ikoner; koden orörd | Ja | `screen-e9a6` |
 
 - Steg 2 och 3 hör ihop: vår meny kontrolleras mot SyncExtPacks egen. Körs steg 3 utan steg 2
   stoppar jobbet sig självt, och inget ändras.
@@ -49,6 +50,15 @@ Ser något fel ut: kör steget **ångra** (tabellen). Startar inte skärmen alls
       "Starta om" i onödan: den startar om SYNC.)
 
 **Efter steg 4:** inget syns i bilen; importen på Macen listar vad som tagits bort.
+
+**Efter steg 5 (R3a, första ändrade Ford-skärmen):**
+- [ ] Telefon, Senaste samtal öppnas: listan, flikarna (Alla, Utgående, Inkommande, Missade).
+- [ ] Nya ikoner: pilarna, den gröna luren vid "Ring", markeringarna för utgående, inkommande
+      och missade samtal.
+- [ ] Tryck på ett samtal och "Ring": samtalet går.
+- [ ] Telefon i övrigt, ett inkommande samtal och backkameran som vanligt.
+- [ ] Öppnas inte skärmen, eller ser den fel ut: ångra med `screen-e9a6`. Resten av SYNC
+      påverkas inte; skärmen laddas bara när den öppnas.
 
 ## Inte byggbart än (och vad som saknas)
 

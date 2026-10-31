@@ -93,9 +93,10 @@ the next.
 | R0 | **Done:** the colours route, the new Apps menu | |
 | R1 | **"Night" colours:** our own `Theme.XML` and gradients (`tools/make_theme.py`). **Built and rehearsed 2026-10-31; waits for the car** | Low: data, start-up but Ford's own format, proven route |
 | R2 | **Preview on the Mac:** render Ford's screens with FFDec, before and after a change, so each step is seen before the car. **Done 2026-10-31** (`tools/preview_screens.py`; the pictures stay private) | None |
-| R3 | **First Ford screen, not at start-up** (a Phone or Climate sub-screen): pictures only, then one class. Proves Ford's files accept changes | Low to medium |
-| R4 | **Media, Phone, Climate**, one screen per visit | Medium |
+| R3 | **First Ford screen, not at start-up:** the call history (`Phone/PhoneHistory/PhoneHistory.swf`). **R3a built and rehearsed 2026-10-31:** eight pictures replaced by our icons, code and layout byte for byte (`tools/build_phone_history.py`, `tools/swf_bitmaps.py`, `s2am job screen`). Then R3b: one class (the new layout). Proves Ford's files accept changes | Low to medium |
+| R4 | **Media (all sources), Phone, Climate**, one screen per visit. Their main screens load at start-up (below), so each starts with its sub-screens | Medium, high for the main screens |
 | R5 | **Navigation overlays** (turn card, buttons) and the **speed box**: the speed limit from Ford's map data beside the GPS speed ([SPEED.md](SPEED.md)) | Medium |
+| | **Found 2026-10-31:** the frame loads the four main areas at start-up (`LoadCornerApps`: Phone, Navigation, Media, Climate), hidden until opened; their sub-screens (call history, keypad, phonebook, Media's sources) load when opened. So `Phone.swf` and `Media.swf` are start-up files like Home | |
 | R6 | **Start-up rehearsal:** change one start-up file that nobody sees (the goodbye animation's still) and undo it, to prove recovery where it matters | Medium |
 | R7 | **Home** (start-up): the four cards | High |
 | R8 | **Frame** (`AppConsole.swf`, start-up, on every screen), including the automatic **night screen** in Ford's `BackLight` ([NIGHT.md](NIGHT.md)); tried first by hand from an Apps menu tile | Highest |

@@ -17,7 +17,8 @@ from PIL import Image, ImageDraw
 
 NAMES = ("phone", "map", "home", "media", "climate", "apps", "settings", "carplay", "video", "files",
          "restart", "voice", "seat", "defrost", "rear", "ac", "recirc", "fan", "seated", "screen_air",
-         "power", "dual", "min_temp", "arrow_right", "arrow_down_right", "turn_right")
+         "power", "dual", "min_temp", "arrow_right", "arrow_down_right", "turn_right", "handset", "call_out",
+         "call_in", "call_missed", "chevron_right", "chevron_up", "chevron_down")
 
 
 def draw(d, name, cx, cy, size, color, width=None):
@@ -53,6 +54,21 @@ def draw(d, name, cx, cy, size, color, width=None):
 
     def head(x, y, angle, length=3.2):  # an open arrowhead with its tip at (x, y), pointing at angle
         line(p2(x, y, length, angle + 140), (x, y), p2(x, y, length, angle - 140))
+
+    def handset(ox, oy, k):  # a filled handset, tilted as on a phone key, centred on (ox, oy), k times full size
+        c, s = math.cos(math.radians(-35)), math.sin(math.radians(-35))
+
+        def q(x, y):
+            x, y = (x - 12) * c - (y - 12) * s, (x - 12) * s + (y - 12) * c
+            return (ox + x * k, oy + y * k)
+        pts = [p(*q(*p2(19.5, 12, 11, a))) for a in range(122, 239, 4)]
+        d.line(pts, fill=color, width=round(4.2 * u * k), joint="curve")
+        for a in (122, 238):  # ear and mouth pieces, reaching in towards the face
+            end, inner = q(*p2(19.5, 12, 11, a)), q(*p2(19.5, 12, 7.2, a))
+            d.line([p(*end), p(*inner)], fill=color, width=round(5.2 * u * k))
+            for x, y in (end, inner):
+                r = 2.6 * u * k
+                d.ellipse((p(x, y)[0] - r, p(x, y)[1] - r, p(x, y)[0] + r, p(x, y)[1] + r), fill=color)
 
     def windscreen(top, bottom, half=17):  # a windscreen seen from inside: two arcs of one circle
         centre = bottom + 22
@@ -144,6 +160,21 @@ def draw(d, name, cx, cy, size, color, width=None):
         line((3, 5), (19, 19)); head(19, 19, 41, 5)
     elif name == "turn_right":
         line((7, 21.5), (7, 13), (8.5, 10.2), (11.5, 9), (20, 9)); head(20, 9, 0, 4.5)
+    elif name == "handset":
+        handset(12, 12, 1)
+    elif name in ("call_out", "call_in", "call_missed"):  # the handset low left, the call's arrow up right
+        handset(9, 14.5, 0.72)
+        if name == "call_out":
+            line((14, 10), (21, 3)); head(21, 3, -45, 4)
+        elif name == "call_in":
+            line((21, 3), (14, 10)); head(14, 10, 135, 4)
+        else:
+            line((13, 3.5), (16.8, 7.8), (21.5, 3)); head(21.5, 3, -45, 3.6)
+    elif name == "chevron_right":
+        line((9, 4), (16, 12), (9, 20))
+    elif name in ("chevron_up", "chevron_down"):
+        y0, y1 = (16, 8) if name == "chevron_up" else (8, 16)
+        line((4, y0), (12, y1), (20, y0))
     else:
         raise ValueError(name)
 

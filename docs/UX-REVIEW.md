@@ -45,7 +45,7 @@ Measured on the sketches (WCAG contrast):
    bar is 64 px high with icons.
 3. **Labels in capitals.** "NOW PLAYING", "NAVIGATION" and the like became sentence case.
 4. **No icon family.** Tiles, area bar and climate used unrelated symbols. **Changed:** one
-   family of 26 icons. Its first fan looked like a swastika (four hooked blades); see finding 11
+   family, now 33 icons. Its first fan looked like a swastika (four hooked blades); see finding 11
    for the fan it has now.
 5. **English text on a Swedish car.** SYNC itself already runs in Swedish. **Changed:**
    sketches and tiles are Swedish by default, English on request (`--lang en`).

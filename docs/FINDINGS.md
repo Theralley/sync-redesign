@@ -77,6 +77,15 @@ colours only the glow and the area buttons. A bigger look needs our own, bolder 
 Fetching car files for study: files built into SYNC's read-only system image (most of
 `\Windows\*.dll`) cannot be copied as files on CE; only files on the flash disk can.
 
+## Which screens load at start-up (2026-10-31)
+
+From the frame's own code (`AppConsole.swf`, decompiled on the Mac; the code stays private):
+at start-up it loads the system apps (Home, Menu, Driver Assist and others) and the four
+**corner apps**, the main screens of Phone, Navigation, Media and Climate (`LoadCornerApps`,
+names from the registry), all hidden until opened. Their sub-screens load only when opened:
+for Phone the call history, keypad, phonebook, quick dial and messages. A changed sub-screen
+can at worst fail when opened; a changed main screen is read at every start.
+
 ## Next
 
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the
