@@ -78,8 +78,8 @@ class (Apps menu); pictures the screens load from files (PNG/JPG, as the Apps me
 - Screenshots of the Flash screens: only photos show them (FINDINGS.md).
 
 **Not known yet:**
-- Whether SYNC checks Ford's own Flash files (the Apps menu was SyncExtPack's). Phase R3
-  answers it on a screen that is not shown at start-up.
+- ~~Whether SYNC checks Ford's own Flash files~~: it does not. R3b's changed call history
+  ran in the car on 2026-11-01 (photo).
 - Which Climate file the Mondeo uses.
 - Whether the texts in `\DataManager\*.db` can be changed safely.
 
@@ -93,7 +93,7 @@ the next.
 | R0 | **Done:** the colours route, the new Apps menu | |
 | R1 | **"Night" colours:** our own `Theme.XML` and gradients (`tools/make_theme.py`). **Built and rehearsed 2026-10-31; waits for the car** | Low: data, start-up but Ford's own format, proven route |
 | R2 | **Preview on the Mac:** render Ford's screens with FFDec, before and after a change, so each step is seen before the car. **Done 2026-10-31** (`tools/preview_screens.py`; the pictures stay private) | None |
-| R3 | **First Ford screen, not at start-up:** the call history (`Phone/PhoneHistory/PhoneHistory.swf`). **R3a built and rehearsed 2026-10-31:** eight pictures replaced by our icons, code and layout byte for byte (`tools/build_phone_history.py`, `tools/swf_bitmaps.py`, `s2am job screen`). **R3b built and rehearsed the same day:** rows 76 px instead of 50, three to a page, the name 26 px, centred; two numbers in the class changed in place and the row's layout through FFDec's XML form, nothing recompiled (`build_phone_history.py --rows`). Proves Ford's files accept changes | Low to medium |
+| R3 | **First Ford screen, not at start-up:** the call history (`Phone/PhoneHistory/PhoneHistory.swf`). **R3a built and rehearsed 2026-10-31:** eight pictures replaced by our icons, code and layout byte for byte (`tools/build_phone_history.py`, `tools/swf_bitmaps.py`, `s2am job screen`). **R3b built and rehearsed the same day:** rows 76 px instead of 50, three to a page, the name 26 px, centred; two numbers in the class changed in place and the row's layout through FFDec's XML form, nothing recompiled (`build_phone_history.py --rows`). Proves Ford's files accept changes. **In the car 2026-11-01: SYNC draws it** (photo: three rows, our icons) | Low to medium |
 | R4 | **Media (all sources), Phone, Climate**, one screen per visit. Their main screens load at start-up (below), so each starts with its sub-screens | Medium, high for the main screens |
 | R5 | **Navigation overlays** (turn card, buttons) and the **speed box**: the speed limit from Ford's map data beside the GPS speed ([SPEED.md](SPEED.md)) | Medium |
 | | **Found 2026-10-31:** the frame loads the four main areas at start-up (`LoadCornerApps`: Phone, Navigation, Media, Climate), hidden until opened; their sub-screens (call history, keypad, phonebook, Media's sources) load when opened. So `Phone.swf` and `Media.swf` are start-up files like Home | |

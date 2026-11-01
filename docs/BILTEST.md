@@ -27,6 +27,12 @@ I bilen:
 4. Ser något fel ut: stoppa i UNTITLED 2.
 5. Ta med fotot och stickan eller stickorna till Macen.
 
+**Resultat (2026-11-01, förmiddag):** fotot visar vår samtalshistorik, inte Fords: tre höga
+rader i stället för fem, tunna pilar på bläddringsknapparna i stället för Fords fyllda
+trianglar, och våra samtalsikoner. SYNC visar alltså en ändrad Ford-skärm. Ändringen syns
+knappt eftersom allt runt listan (menyn till vänster, flikarna, listerna upptill och nedtill)
+fortfarande är Fords. Stickorna är inte inlästa än.
+
 ## Allt på en gång (samlingsjobbet, första turen)
 
 **SYNC-stickan** bar `bundle-1c35`, som körde fem jobb i en tur, i den här ordningen:

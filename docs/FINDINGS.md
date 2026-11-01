@@ -97,6 +97,17 @@ can at worst fail when opened; a changed main screen is read at every start.
   little; Rasmus did not notice it. A redesign that is meant to be seen needs the screens
   themselves (R3 onwards), not the colours file.
 
+## SYNC draws a changed Ford screen (2026-11-01)
+
+- Rasmus's photo of the call history after the second visit shows **our R3b screen**: three
+  tall rows instead of five, thin chevrons on the scroll buttons instead of Ford's solid
+  triangles, and our call icons. So SYNC does not check Ford's Flash files: a changed screen
+  (pictures, two numbers in a class, one sprite's layout) loads and runs.
+- Rasmus saw it as "no change". The list is a small part of the screen; the frame around it
+  (left menu, tabs, top and bottom bars, the glossy buttons) is `AppConsole.swf` and the Phone
+  main screen, which load at start-up (R6, R7, R8). Changes inside one list don't show up
+  enough to notice. A change he can see needs the frame or a whole screen.
+
 ## Next
 
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the
