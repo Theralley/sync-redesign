@@ -22,6 +22,12 @@ Ramen läses när SYNC startar. Det är första gången vi byter en sådan fil, 
   Båda stickorna skrivna, lästa tillbaka efter omstickning och efter ommontering, märkta
   och utmatade 2026-11-01.
 
+**Resultat (2026-11-01, kväll):** SYNC-stickan körd, allt verifierat byte för byte. SYNC startade
+med den nya ramen och alla skärmar på fotona fungerar. Platta mörka flikar, rader och knappar
+utan kant. Men klockans fält, flikarna nedtill och menyknapparna till vänster blev ljust
+blågrå, och på Klimat blev ett band nedtill klarblått. Orsaken spåras i Fords kod; UNTITLED 2
+behövdes inte.
+
 I bilen:
 
 1. Parkerad, motorn igång. Stoppa i SYNC-stickan och vänta: "Install successfully completed",

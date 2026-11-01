@@ -108,6 +108,20 @@ can at worst fail when opened; a changed main screen is read at every start.
   main screen, which load at start-up (R6, R7, R8). Changes inside one list don't show up
   enough to notice. A change he can see needs the frame or a whole screen.
 
+## The restyled frame in the car (2026-11-01, evening)
+
+- `bundle-8fc9` ran; every part verified byte for byte on import: Ford's theme back, then Night
+  with borderless buttons, then the restyled frame (`screen-8393`). **SYNC started with the
+  changed start-up file**, and every screen in the photos works: Home, Settings, Navigation,
+  the call history, the Apps menu, Climate. The first start-up Flash file is proven.
+- Rasmus: "home good". Seen in the photos (night, display mode Auto):
+  - as intended: flat dark tabs, list rows, setting rows and climate buttons without outlines;
+  - **not as intended:** the clock piece and the bottom tabs (Info, Home, Settings) come out
+    light blue-grey, the left-hand menu buttons light grey, and on Climate a band across the
+    bottom is bright blue with stripes. Measured in one photo: the black background (61,58,57),
+    a flat button (74,68,61), the clock piece (139,177,212). Something lightens these pictures
+    on the car; being traced in Ford's frame code.
+
 ## Next
 
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the
