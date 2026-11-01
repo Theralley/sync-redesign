@@ -13,10 +13,14 @@ kod ändras och ingenting flyttar sig, så klimatknapparna sitter där de sitter
 
 Ramen läses när SYNC startar. Det är första gången vi byter en sådan fil, så:
 
-- **SYNC-stickan:** `screen-8393`, den nya ramen. **UNTITLED 2:** `screen-e9a7`, som ångrar den.
-  (Stickorna skrivs när de är tillbaka vid Macen och SYNC-stickan är inläst.)
-- Generalrepeterat på en simulerad SYNC med bilens egen fil: på, av, och en annan fil i bilen
-  lämnas orörd.
+- **SYNC-stickan:** `bundle-8fc9`. Den lägger först tillbaka Fords färger, sedan Night med
+  knappar utan ram (knapparnas kantlinje i knappens egen färg), sist den nya ramen
+  (`screen-8393`). Stannar något tidigare rörs ramen inte.
+- **UNTITLED 2:** `bundle-f6bd`, som lägger tillbaka Fords ram och Fords färger. Svenska
+  Apps-rutor och de stora raderna i samtalshistoriken ligger kvar.
+- Generalrepeterat på en simulerad SYNC i bilens läge just nu: på och av byte för byte.
+  Båda stickorna skrivna, lästa tillbaka efter omstickning och efter ommontering, märkta
+  och utmatade 2026-11-01.
 
 I bilen:
 
