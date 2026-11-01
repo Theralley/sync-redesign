@@ -1,10 +1,13 @@
 """Make the "Night" colour theme (plan phase R1) from the car's own theme files.
 
-Usage: python3 tools/make_theme.py CAR_THEMES_FOLDER OUTFOLDER
+Usage: python3 tools/make_theme.py CAR_THEMES_FOLDER OUTFOLDER [--borderless]
 CAR_THEMES_FOLDER is the drive log's copy of \\8inchSkins\\Ford\\Sync\\Themes (in ~/.s2am).
 
 Writes Theme.XML and yellow/green/red/blue.bmp for `s2am job theme --from OUTFOLDER`:
-- Theme.XML: the car's own file with only the four areas' button and dialog colours changed.
+- Theme.XML: the car's own file with only the four areas' button and dialog colours changed;
+  with --borderless also the outline SYNC draws round every button (System's dayColor and
+  nightColor, which SyncThemeButtonArt uses), set to the restyled button's own colour, so the
+  flat buttons of phase R4a stand on the black without a frame.
 - The gradients: a thinner, calmer glow in the new accent colours, drawn into exactly the
   original format (the car's own 70-byte header, 800x240, 16-bit RGB565, bottom-up), so
   every file keeps its size.
@@ -22,13 +25,16 @@ NIGHT = [("yellow.bmp", (214, 160, 72)), ("green.bmp", (72, 190, 150)), ("red.bm
 GLOW = (0.42, 150)  # brightness at the edge, and how many pixels the glow reaches
 ACTIVE = re.compile(rb"^([ \t]*<AppType )btnColor=\"0x[0-9a-fA-F]{6}\" dialogColor=\"0x[0-9a-fA-F]{6}\"",
                     re.MULTILINE)
+OUTLINE = re.compile(rb"^([ \t]*<AppType [^\n]*?)dayColor=\"0x[0-9a-fA-F]{6}\" nightColor=\"0x[0-9a-fA-F]{6}\"",
+                     re.MULTILINE)
+BUTTON = (38, 42, 51)  # restyle_art.BUTTON: the restyled button's colour
 
 
 def hex_color(rgb, scale=1.0):
     return "0x%02X%02X%02X" % tuple(min(255, round(c * scale)) for c in rgb)
 
 
-def theme_xml(original: bytes) -> bytes:
+def theme_xml(original: bytes, borderless: bool = False) -> bytes:
     lines = ACTIVE.findall(original)
     if len(lines) != 5:
         raise SystemExit(f"expected 5 AppType lines (System and four areas), found {len(lines)}")
@@ -40,7 +46,13 @@ def theme_xml(original: bytes) -> bytes:
             return match.group(0)
         accent = NIGHT[count[0] - 2][1]
         return match.group(1) + f'btnColor="{hex_color(accent)}" dialogColor="{hex_color(accent, 0.72)}"'.encode()
-    return ACTIVE.sub(recolour, original)
+    result = ACTIVE.sub(recolour, original)
+    if borderless:  # the first AppType line is System, the one whose outline every button gets
+        result = OUTLINE.sub(lambda m: m.group(1) + f'dayColor="{hex_color(BUTTON)}" '
+                             f'nightColor="{hex_color(BUTTON)}"'.encode(), result, count=1)
+        if result.count(f'dayColor="{hex_color(BUTTON)}"'.encode()) != 1:
+            raise SystemExit("System's outline colours were not where expected; nothing written")
+    return result
 
 
 def gradient(original: bytes, accent) -> bytes:
@@ -67,16 +79,18 @@ def gradient(original: bytes, accent) -> bytes:
     return built
 
 
-def main(car: str, out: str) -> None:
+def main(car: str, out: str, borderless: bool = False) -> None:
     car_folder, out_folder = Path(car), Path(out)
     out_folder.mkdir(parents=True, exist_ok=True)
-    (out_folder / "Theme.XML").write_bytes(theme_xml((car_folder / "Theme.XML").read_bytes()))
+    (out_folder / "Theme.XML").write_bytes(theme_xml((car_folder / "Theme.XML").read_bytes(), borderless))
     for name, accent in NIGHT:
         (out_folder / name).write_bytes(gradient((car_folder / name).read_bytes(), accent))
-    print(f"Night theme in {out_folder}: Theme.XML and {len(NIGHT)} gradients, sizes unchanged")
+    print(f"Night theme in {out_folder}: Theme.XML" + (" (borderless buttons)" if borderless else "")
+          + f" and {len(NIGHT)} gradients, sizes unchanged")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    args = [a for a in sys.argv[1:] if a != "--borderless"]
+    if len(args) != 2 or len(sys.argv) - 1 - len(args) > 1:
         raise SystemExit(__doc__)
-    main(sys.argv[1], sys.argv[2])
+    main(args[0], args[1], "--borderless" in sys.argv)

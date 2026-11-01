@@ -18,7 +18,8 @@ from PIL import Image, ImageDraw
 NAMES = ("phone", "map", "home", "media", "climate", "apps", "settings", "carplay", "video", "files",
          "restart", "voice", "seat", "defrost", "rear", "ac", "recirc", "fan", "seated", "screen_air",
          "power", "dual", "min_temp", "arrow_right", "arrow_down_right", "turn_right", "handset", "call_out",
-         "call_in", "call_missed", "chevron_right", "chevron_up", "chevron_down")
+         "call_in", "call_missed", "chevron_right", "chevron_up", "chevron_down", "info", "back", "backspace",
+         "wifi0", "wifi1", "wifi2", "wifi3", "road", "person_voice")
 
 
 def draw(d, name, cx, cy, size, color, width=None):
@@ -175,6 +176,25 @@ def draw(d, name, cx, cy, size, color, width=None):
     elif name in ("chevron_up", "chevron_down"):
         y0, y1 = (16, 8) if name == "chevron_up" else (8, 16)
         line((4, y0), (12, y1), (20, y0))
+    elif name == "info":  # a plain i: a dot over a stem with a foot
+        circle(12, 4.5, 1.6, True); line((10, 10), (12.5, 10), (12.5, 20.5)); line((10, 20.5), (15, 20.5))
+    elif name == "back":  # an arrow turning back on itself
+        line((19.5, 19), (19.5, 13), (17.5, 10), (14.5, 9), (4.5, 9)); head(4.5, 9, 180, 4.5)
+    elif name == "backspace":  # the delete key: a tag pointing left with a cross in it
+        line((8, 5), (21.5, 5), (21.5, 19), (8, 19), (2.5, 12), (8, 5))
+        line((11.5, 9), (17.5, 15)); line((17.5, 9), (11.5, 15))
+    elif name in ("wifi0", "wifi1", "wifi2", "wifi3"):  # a dot and up to three arcs above it
+        circle(12, 19.5, 1.7, True)
+        for k, r in enumerate((6, 11, 16)):
+            if k < int(name[-1]):
+                arc(12, 21, r, 225, 315)
+    elif name == "road":  # a road running into the distance
+        line((3, 21.5), (9.5, 2.5)); line((21, 21.5), (14.5, 2.5))
+        for y0, y1 in ((19, 15.5), (11.5, 8.5), (5.5, 3.5)):
+            line((12, y0), (12, y1))
+    elif name == "person_voice":  # a head in profile speaking: sound arcs in front of the mouth
+        circle(9, 8, 4.2); line((3, 21.5), (4.5, 16), (9, 14), (13.5, 16), (15, 21.5))
+        arc(14, 9, 4, -45, 45); arc(14, 9, 8, -45, 45)
     else:
         raise ValueError(name)
 

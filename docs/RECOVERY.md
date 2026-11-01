@@ -52,7 +52,10 @@ Not tested yet, and the reason no change touches a start-up file until steps 1-2
 worked:
 
 - Insert the undo stick anyway and wait two minutes: SyncExtPack's install service runs
-  apart from SYNC's screens, so it may still apply it. Then do a soft reset.
+  apart from SYNC's screens, so it may still apply it. Then do a soft reset. (The service is a
+  Windows CE service, `HKLM\Services\UPDATESVC`, loaded at boot by the system, not by the
+  Flash screens; it shows its own status window. Expected to work, not yet tested with a dark
+  screen.)
 - **Last resort:** reinstall SYNC 3.10 from USB with SyncExtPack's
   [firmware guide](https://github.com/chr0m1ng/syncextpack/blob/main/FIRMWARE_INSTALLATION.md).
   It puts back all of Ford's files and removes SyncExtPack, so its first install has to be
@@ -65,3 +68,5 @@ worked:
 | Colours (`s2am job theme`) | `\8inchSkins\Ford\Sync\Themes\` Theme.XML and four gradient BMPs | Yes, read when SYNC starts | `theme --restore <job>` |
 | Wallpaper (SYNC's own editor) | `\8inchSkins\Ford\Sync\Apps\Home\Wallpapers\` | Yes | Pick another wallpaper in Settings |
 | Apps menu (`s2am job apps-menu`) | `\8inchSkins\Ford\Sync\Apps\Info\SyncApps\` SyncApps.swf, plus pictures in `Tiles\` | No, only when Apps opens | `apps-menu --restore <job>` (the pictures stay, unused) |
+| Call history (`s2am job screen`) | `\8inchSkins\Ford\Sync\Apps\Phone\PhoneHistory\PhoneHistory.swf` | No, when opened | `screen --restore <job>` |
+| Frame, restyled (`s2am job screen --startup`) | `\8inchSkins\Ford\Sync\Apps\AppConsole\AppConsole.swf` | **Yes**: every screen | `screen --restore <job>`; if the screen stays dark, step 5 |

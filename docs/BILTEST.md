@@ -3,6 +3,32 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
+## Tredje turen: ny stil på hela SYNC (förberett 2026-11-01)
+
+Fords glansiga knappar, listerna upptill och nedtill och deras ikoner är bilder i en enda fil,
+ramen (`AppConsole.swf`). Alla 135 är omritade platta i samma storlek: mörka knappar utan glans,
+en vald knapp tonad i områdets färg med ett streck upptill, platta lister och våra ikoner. Ingen
+kod ändras och ingenting flyttar sig, så klimatknapparna sitter där de sitter. Det syns på
+**varje** skärm, men det är samma layout: de nya skärmarna från skisserna kommer efter detta.
+
+Ramen läses när SYNC startar. Det är första gången vi byter en sådan fil, så:
+
+- **SYNC-stickan:** `screen-8393`, den nya ramen. **UNTITLED 2:** `screen-e9a7`, som ångrar den.
+  (Stickorna skrivs när de är tillbaka vid Macen och SYNC-stickan är inläst.)
+- Generalrepeterat på en simulerad SYNC med bilens egen fil: på, av, och en annan fil i bilen
+  lämnas orörd.
+
+I bilen:
+
+1. Parkerad, motorn igång. Stoppa i SYNC-stickan och vänta: "Install successfully completed",
+   sedan startar SYNC om.
+2. **Foto** av Hem, Telefon, Media, Klimat och Navigering.
+3. Prova: ett samtal in och ett ut, radion, klimatet (temperatur, fläkt, A/C, **MAX DEFROST**),
+   **backen och kameran**, röstknappen.
+4. **Om skärmen förblir svart:** stoppa i UNTITLED 2 ändå och vänta två minuter. Installations-
+   tjänsten går vid sidan av skärmarna. Sedan mjuk omstart (vredet och ⏭ i tio sekunder).
+5. Ser något fel ut: UNTITLED 2. Ta med fotona och stickorna till Macen.
+
 ## Andra turen (2026-11-01)
 
 Första turen gick igenom: alla delar ligger verifierade byte för byte, och ångra-stickan
