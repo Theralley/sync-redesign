@@ -122,6 +122,30 @@ can at worst fail when opened; a changed main screen is read at every start.
     a flat button (74,68,61), the clock piece (139,177,212). Something lightens these pictures
     on the car; being traced in Ford's frame code.
 
+## The fixed frame in the car (2026-11-02, morning)
+
+- **The cause of the third visit's look was ours.** `swf_bitmaps` wrote 0 into the first byte of
+  every pixel of a picture without alpha (DefineBitsLossless, format 5). The format calls the
+  byte reserved, but every one of Ford's 313 such pictures holds 0xFF there and the car's player
+  reads it as opacity, so our 76 button strips and four corner bars drew transparent: black
+  buttons with only an outline, and the theme's glow showing through on Climate. Ford's code
+  does not tint the frame: no colour transform, blend or filter reaches it (the theme's
+  colouring touches dialogs and indicator glows only). Fixed (47ad11d).
+- `bundle-8d9d` ran at 07:39; every part verified byte for byte (Settings > Display with the
+  Auto dim offset from -10, Ford's frame back, the fixed frame). SyncExtPack restarts SYNC after
+  an install, so the photos from 07:42 show the fixed frame: the buttons and bars are solid.
+- **The screen shows dark greys far lighter than their numbers.** Measured in a daylight photo of
+  the call history: the black background (39-46), our bars (23,26,32) about (140,158,188), our
+  buttons (38,42,51) about (207,217,218), Ford's own menu buttons (49,49,49) about
+  (228,224,203). Ford's frame is drawn from the same dark greys (the clock piece is
+  (36,36,36), the top bar 62 fading to 28) and photographs silver (2026-10-30). Near black,
+  each step of the input shows as roughly 4.5 steps in the photo. How much of it is the phone
+  camera and how much the screen is asked; `restyle_frame.py --palette deep` keeps the same
+  design near black (bars 6, buttons 13).
+- On the Phone screens the top-left area still shows a striped amber glow (being traced).
+- Rasmus: "it still feels old/like the old system BUT with some new skins": the next steps are
+  layouts, not pictures (Home's cards, then the frame's bars).
+
 ## Next
 
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the

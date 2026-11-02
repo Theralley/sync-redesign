@@ -3,6 +3,23 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
+## Fjärde turen: ramen lagad, mörkare dimning (2026-11-02)
+
+Tredje turens fel var vårt, inte Fords: bilder utan genomskinlighet fick 0 i en byte som bilen
+läser som täckning, så knapparna och listerna ritades genomskinliga. Lagat, och ramen är
+byggd om. Dessutom kan förskjutningen för automatisk dimning nu gå ner till −10 (Ford: −5).
+
+- **SYNC-stickan:** `bundle-8d9d`: Display med golvet −10, Fords ram tillbaka, sedan den
+  lagade ramen.
+- **UNTITLED 2:** `bundle-724f`, som ångrar ramen och dimningen.
+
+**Resultat (2026-11-02, 07:39):** SYNC-stickan körd, alla tre delar verifierade byte för byte.
+SYNC startade om och fotona visar den lagade ramen: knappar och lister är heltäckande nu.
+Men bilens skärm visar mörkgrått mycket ljusare än siffrorna: på dagsfotona blir svart cirka
+42 av 255, listerna cirka 150 och knapparna cirka 210, lika ljust som Fords egen grå ram.
+Därför ser det fortfarande ut som det gamla systemet med nya skal (Rasmus omdöme). Dimningen
+under −5 är inte provad än. UNTITLED 2 behövdes inte.
+
 ## Tredje turen: ny stil på hela SYNC (förberett 2026-11-01)
 
 Fords glansiga knappar, listerna upptill och nedtill och deras ikoner är bilder i en enda fil,

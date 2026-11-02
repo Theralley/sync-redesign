@@ -1,6 +1,7 @@
 """Restyle SYNC's frame: every button, the bars round the screen and their icons (plan phase R4).
 
-Usage: python3 tools/restyle_frame.py CAR_APPCONSOLE_SWF OUT_SWF [--radius N] [--preview FOLDER]
+Usage: python3 tools/restyle_frame.py CAR_APPCONSOLE_SWF OUT_SWF [--palette night|deep] [--radius N]
+                                     [--preview FOLDER]
 
 Takes **your car's own** Apps\\AppConsole\\AppConsole.swf (from the drive log, in ~/.s2am). It
 holds the art for the whole frame, and for every button on every screen: SYNC's button class
@@ -22,7 +23,9 @@ draws it before scaling each button, so on wide buttons a larger radius turns ov
 The file is SYNC's frame and loads at start-up. The result is checked tag by tag against the
 car's file: only the named pictures (and, with --radius, that one class) may differ. A file
 that is not the frame this was made for (other pictures or sizes) is refused. --preview FOLDER
-gets Ford's pictures and ours side by side (Ford's artwork: keep it private).
+gets Ford's pictures and ours side by side (Ford's artwork: keep it private). --palette picks
+restyle_art's colours: "night" (the default, R4a) or "deep", near black, for the car's screen,
+which shows dark greys far lighter than their numbers.
 """
 from __future__ import annotations
 
@@ -60,15 +63,15 @@ PIECES = {
     309: ((72, 59), False, ("home", 36, 32.5, 28)), 311: ((72, 59), True, ("home", 36, 32.5, 28)),
     323: ((72, 59), False, ("road", 36, 32, 26)), 325: ((72, 59), True, ("road", 36, 32, 26)),
 }
-# Icons alone: id -> (size, icon, colour, icon size)
+# Icons alone: id -> (size, icon, colour (a restyle_art name, read when drawn), icon size)
 ICONS = {
-    103: ((23, 28), "person_voice", art.TEXT, 21), 127: ((23, 28), "person_voice", art.DIM, 21),
-    121: ((50, 50), "back", art.TEXT, 34), 150: ((28, 20), "backspace", art.TEXT, 19),
-    262: ((21, 35), "info", art.ACCENTS[1], 24), 265: ((19, 33), "info", art.TEXT, 24),
-    268: ((19, 33), "info", art.QUIET, 24),
-    287: ((38, 33), "home", art.QUIET, 28), 290: ((38, 33), "home", art.TEXT, 28),
-    317: ((36, 33), "settings", art.TEXT, 27), 319: ((36, 33), "settings", art.QUIET, 27),
-    339: ((50, 50), "road", art.QUIET, 30), 342: ((50, 50), "road", art.TEXT, 30),
+    103: ((23, 28), "person_voice", "TEXT", 21), 127: ((23, 28), "person_voice", "DIM", 21),
+    121: ((50, 50), "back", "TEXT", 34), 150: ((28, 20), "backspace", "TEXT", 19),
+    262: ((21, 35), "info", "ACCENT1", 24), 265: ((19, 33), "info", "TEXT", 24),
+    268: ((19, 33), "info", "QUIET", 24),
+    287: ((38, 33), "home", "QUIET", 28), 290: ((38, 33), "home", "TEXT", 28),
+    317: ((36, 33), "settings", "TEXT", 27), 319: ((36, 33), "settings", "QUIET", 27),
+    339: ((50, 50), "road", "QUIET", 30), 342: ((50, 50), "road", "TEXT", 30),
 }
 SIGNAL = {275: 3, 278: 2, 281: 1, 284: 0}  # 21x18, Ford's four signal strengths
 # Indicator lights: id -> (size, the pill (x0, y0, x1, y1), level); None for a dark socket
@@ -80,6 +83,11 @@ LIGHTS = {
     203: ((24, 36), (9, 7, 14, 28), 0.0), 205: ((26, 50), (10, 14, 15, 35), 1.0),
 }
 DIVIDERS = {156: (2, 49), 174: (2, 49), 295: (2, 53)}
+
+
+def colour(name: str):
+    """A restyle_art colour by name, in the palette in use: TEXT, QUIET, DIM, ACCENT0..4."""
+    return art.ACCENTS[int(name[-1])] if name.startswith("ACCENT") else getattr(art, name)
 
 
 def strip_names(body: bytes) -> dict[int, str]:
@@ -131,8 +139,8 @@ def artwork(data: bytes) -> dict[int, Image.Image]:
         new[ident] = art.bar(size, area, top)
     for ident, (size, pressed, icon) in PIECES.items():
         new[ident] = art.flatten(pictures[ident], pressed, icon)
-    for ident, (size, name, colour, icon_size) in ICONS.items():
-        new[ident] = art.icon(size, name, colour, icon_size)
+    for ident, (size, name, colour_name, icon_size) in ICONS.items():
+        new[ident] = art.icon(size, name, colour(colour_name), icon_size)
     for ident, level in SIGNAL.items():
         new[ident] = art.signal((21, 18), level, 17)
     for ident, (size, box, level) in LIGHTS.items():
@@ -212,10 +220,12 @@ def preview(data: bytes, new: dict[int, Image.Image], folder: Path) -> None:
 def main(argv: list[str]) -> None:
     radius = int(argv[argv.index("--radius") + 1]) if "--radius" in argv else None
     folder = Path(argv[argv.index("--preview") + 1]) if "--preview" in argv else None
-    args = [a for i, a in enumerate(argv) if not a.startswith("--") and (i == 0 or argv[i - 1] not in ("--radius",
-                                                                                                    "--preview"))]
-    if len(args) != 2 or (radius is not None and not 1 <= radius <= 12):
+    palette = argv[argv.index("--palette") + 1] if "--palette" in argv else "night"
+    args = [a for i, a in enumerate(argv) if not a.startswith("--")
+            and (i == 0 or argv[i - 1] not in ("--radius", "--preview", "--palette"))]
+    if len(args) != 2 or (radius is not None and not 1 <= radius <= 12) or palette not in art.PALETTES:
         raise SystemExit(__doc__)
+    art.use(palette)
     source, target = args
     data = Path(source).read_bytes()
     new = artwork(data)
@@ -227,7 +237,7 @@ def main(argv: list[str]) -> None:
     Path(target).write_bytes(result)
     if folder:
         preview(data, new, folder)
-    print(f"{target}: {len(new)} pictures restyled" + (f", corner radius {radius}" if radius else "")
+    print(f"{target}: {len(new)} pictures restyled ({palette})" + (f", corner radius {radius}" if radius else "")
           + f"; everything else byte for byte; sha256 {hashlib.sha256(result).hexdigest()[:16]}, {len(result)} bytes")
 
 

@@ -24,11 +24,25 @@ BACKGROUND, BAR, BUTTON = (14, 16, 20), (23, 26, 32), (38, 42, 51)
 BAR_PRESSED, BUTTON_PRESSED = (44, 49, 59), (59, 65, 77)
 EDGE = (52, 57, 68)  # a quiet edge on the bar pieces
 TEXT, QUIET, DIM = (236, 238, 242), (150, 156, 168), (74, 80, 92)
+# The car's screen shows dark greys far lighter than their numbers: photographed in daylight on
+# 2026-11-02, black came out about 42 of 255, the "night" bars (23,26,32) about 150 and its
+# buttons (38,42,51) about 210, as light as Ford's own grey frame. "deep" sits near black.
+PALETTES = {
+    "night": dict(BACKGROUND=BACKGROUND, BAR=BAR, BUTTON=BUTTON, BAR_PRESSED=BAR_PRESSED,
+                  BUTTON_PRESSED=BUTTON_PRESSED, EDGE=EDGE, DIM=DIM),
+    "deep": dict(BACKGROUND=(0, 0, 0), BAR=(6, 7, 9), BUTTON=(13, 14, 18), BAR_PRESSED=(17, 19, 23),
+                 BUTTON_PRESSED=(26, 29, 35), EDGE=(18, 20, 25), DIM=(34, 37, 44)),
+}
 # SYNC's area types (Theme.XML's AppTypes): 0 system, 1 phone, 2 navigation, 3 media, 4 climate
 ACCENTS = {0: (150, 150, 160), 1: (214, 160, 72), 2: (72, 190, 150), 3: (220, 76, 84), 4: (64, 150, 255)}
 LINE = 3  # px: the area colour's line on a selected button and on the bars
 TINT, TINT_PRESSED = 0.42, 0.58  # how much of the area colour a selected button takes
 WEIGHT = 2.5  # px: the stroke of every bar icon
+
+
+def use(palette: str) -> None:
+    """Draw everything after this in one of PALETTES."""
+    globals().update(PALETTES[palette])
 
 
 def mix(a, b, t):

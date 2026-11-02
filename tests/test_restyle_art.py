@@ -60,6 +60,22 @@ class Art(unittest.TestCase):
         line = Image.new("RGBA", (2, 49), (56, 56, 56, 200))
         self.assertEqual(art.recolour(line, art.EDGE).getpixel((1, 5)), (*art.EDGE, 200))
 
+    def test_the_deep_palette_draws_near_black_and_the_theme_outline_follows_it(self):
+        import make_theme
+        xml = (b'<AppTypes>\n<AppType btnColor="0x777777" dialogColor="0x777777" dayColor="0x666666" nightColor="0x393939" />\n'
+               + b''.join(b'<AppType btnColor="0x111111" dialogColor="0x111111" dayColor="0x666666" nightColor="0x393939" />\n'
+                          for _ in range(4)))
+        try:
+            art.use("deep")
+            self.assertEqual(art.strip(4, 32, "AVAILABLE").getpixel((0, 0))[:3], (13, 14, 18))
+            self.assertEqual(restyle_frame.colour("DIM"), art.PALETTES["deep"]["DIM"])
+            self.assertEqual(restyle_frame.colour("ACCENT1"), art.ACCENTS[1])
+            self.assertIn(b'dayColor="0x0D0E12" nightColor="0x0D0E12"', make_theme.theme_xml(xml, True, "deep"))
+        finally:
+            art.use("night")
+        self.assertEqual(art.strip(4, 32, "AVAILABLE").getpixel((0, 0))[:3], (38, 42, 51))
+        self.assertIn(b'dayColor="0x262A33" nightColor="0x262A33"', make_theme.theme_xml(xml, True))
+
     def test_strip_names_are_read_as_the_button_class_builds_them(self):
         self.assertEqual(restyle_frame.parse_strip("PRESSEDSELECTED45_2"), ("PRESSEDSELECTED", 45, 2))
         self.assertEqual(restyle_frame.parse_strip("AVAILABLE30"), ("AVAILABLE", 30, None))
