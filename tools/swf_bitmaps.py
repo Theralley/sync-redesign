@@ -84,7 +84,9 @@ def pictures(body: bytes) -> dict[int, tuple[int, int, int, int]]:
 
 
 def encode(code: int, ident: int, image: Image.Image) -> bytes:
-    """A format-5 (32-bit) lossless picture: premultiplied ARGB, or 0RGB without alpha. A JPEG3:
+    """A format-5 (32-bit) lossless picture: premultiplied ARGB, or, without alpha, FF RGB: the
+    format calls the first byte reserved, but Ford's files hold 0xFF there in every pixel and the
+    car's player reads it as opacity (written as 0, the pictures drew transparent). A JPEG3:
     baseline JPEG of the premultiplied colour, then the alpha channel, zlib-compressed."""
     if code == JPEG3:
         rgba = image.convert("RGBA")
@@ -99,7 +101,7 @@ def encode(code: int, ident: int, image: Image.Image) -> bytes:
         if code == LOSSLESS2:
             pixels += bytes((a, r * a // 255, g * a // 255, b * a // 255))
         else:
-            pixels += bytes((0, r, g, b))
+            pixels += bytes((255, r, g, b))
     return struct.pack("<HBHH", ident, 5, image.width, image.height) + zlib.compress(bytes(pixels), 9)
 
 

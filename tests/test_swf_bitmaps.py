@@ -48,6 +48,12 @@ class Bitmaps(unittest.TestCase):
             self.assertEqual(changed, [2])  # the stage, the action and picture 9 are untouched
             self.assertEqual(swf_bitmaps.decode(36, after[2][2]).getpixel((0, 0)), (0, 200, 0, 255))
 
+    def test_a_picture_without_alpha_is_opaque_as_fords_are(self):
+        contents = swf_bitmaps.encode(20, 9, Image.new("RGBA", (3, 2), (10, 20, 30, 255)))
+        raw = zlib.decompress(contents[7:])
+        self.assertEqual(set(raw[0::4]), {255})  # the car's player reads this byte as opacity
+        self.assertEqual(swf_bitmaps.decode(20, contents).getpixel((0, 0)), (10, 20, 30, 255))
+
     def test_refuses_another_size_or_an_unknown_picture(self):
         with self.assertRaisesRegex(swf_bitmaps.SwfError, "4x3"):
             swf_bitmaps.replace(flash(), {7: Image.new("RGBA", (5, 3))})
