@@ -76,6 +76,59 @@ class Art(unittest.TestCase):
         self.assertEqual(art.strip(4, 32, "AVAILABLE").getpixel((0, 0))[:3], (38, 42, 51))
         self.assertIn(b'dayColor="0x262A33" nightColor="0x262A33"', make_theme.theme_xml(xml, True))
 
+    def test_a_straight_piece_is_flat_inside_the_bar_and_clear_outside(self):
+        bottom = art.straight((90, 59), False, (restyle_frame.OVERHANG, 59), ("home", 45, 32.5, 26))
+        self.assertEqual(bottom.size, (90, 59))
+        self.assertEqual([bottom.getpixel((5, y))[3] for y in (0, 10, 11, 58)], [0, 0, 255, 255])
+        self.assertEqual(bottom.getpixel((5, 30)), (*art.BAR, 255))
+        selected = art.straight((90, 59), True, (11, 59), line=True)
+        self.assertEqual([selected.getpixel((5, y))[:3] for y in (11, 13, 14)],
+                         [art.ACCENTS[0], art.ACCENTS[0], art.BAR_PRESSED])
+        top = art.straight((252, 59), False, (0, 48))
+        self.assertEqual([top.getpixel((5, y))[3] for y in (0, 47, 48, 58)], [255, 255, 0, 0])
+
+    def test_the_frame_is_laid_out_where_sync_puts_it(self):
+        new = {ident: Image.new("RGBA", (1, 1)) for ident, _ in restyle_frame.LAYOUT}
+        for ident, size in ((232, (334, 48)), (240, (334, 48)), (249, (252, 59)), (311, (72, 59))):
+            new[ident] = Image.new("RGBA", size, (200, 0, 0, 255))
+        screen = restyle_frame.mock(new)
+        self.assertEqual(screen.size, (800, 480))
+        self.assertEqual(screen.getpixel((0, 0)), (200, 0, 0))      # the top-left bar, at x=-2
+        self.assertEqual(screen.getpixel((0, 431)), (0, 0, 0))      # the bottom bar starts at 432
+        self.assertEqual(screen.getpixel((0, 432)), (200, 0, 0))
+        self.assertEqual(screen.getpixel((362, 421)), (200, 0, 0))  # Home's piece at (362, 421)
+
+    def test_the_command_lines_refuse_a_missing_value_and_carry_the_flags(self):
+        self.assertEqual(restyle_frame.options(["a.swf", "b.swf", "--palette", "deep", "--straight"]),
+                         ("a.swf", "b.swf", "deep", True, None, None))
+        for wrong in (["a.swf", "b.swf", "--preview", "--straight"], ["a.swf", "b.swf", "--palette"],
+                      ["a.swf", "b.swf", "--palette", "pink"], ["a.swf", "b.swf", "--bent"], ["a.swf"]):
+            with self.subTest(wrong=wrong), self.assertRaises(SystemExit):
+                restyle_frame.options(wrong)
+
+    def test_without_glow_the_gradients_are_black_and_keep_their_size(self):
+        import struct
+        import make_theme
+        header = (b"BM" + struct.pack("<IHHI", 70 + 800 * 240 * 2, 0, 0, 70)
+                  + struct.pack("<IiiHHIIiiII", 56, 800, 240, 1, 16, 3, 800 * 240 * 2, 2835, 2835, 0, 0)
+                  + struct.pack("<IIII", 0xF800, 0x7E0, 0x1F, 0))
+        original = header + struct.pack("<H", 0x1234) * (800 * 240)
+        black = make_theme.gradient(original, (214, 160, 72), glow=False)
+        self.assertEqual((len(black), black[:70], set(black[70:])), (len(original), header, {0}))
+        self.assertNotEqual(set(make_theme.gradient(original, (214, 160, 72))[70:]), {0})
+        import tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            car, out = Path(temp) / "car", Path(temp) / "out"
+            car.mkdir()
+            (car / "Theme.XML").write_bytes(
+                b'<AppType btnColor="0x777777" dialogColor="0x777777" dayColor="0x666666" nightColor="0x393939" />\n' * 5)
+            for name, _ in make_theme.NIGHT:
+                (car / name).write_bytes(original)
+            make_theme.main(str(car), str(out), True, "deep", glow=False)
+            for name, _ in make_theme.NIGHT:
+                self.assertEqual(set((out / name).read_bytes()[70:]), {0})
+            self.assertIn(b'dayColor="0x0D0E12"', (out / "Theme.XML").read_bytes())
+
     def test_strip_names_are_read_as_the_button_class_builds_them(self):
         self.assertEqual(restyle_frame.parse_strip("PRESSEDSELECTED45_2"), ("PRESSEDSELECTED", 45, 2))
         self.assertEqual(restyle_frame.parse_strip("AVAILABLE30"), ("AVAILABLE", 30, None))

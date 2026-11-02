@@ -1,7 +1,7 @@
 """Restyle SYNC's frame: every button, the bars round the screen and their icons (plan phase R4).
 
-Usage: python3 tools/restyle_frame.py CAR_APPCONSOLE_SWF OUT_SWF [--palette night|deep] [--radius N]
-                                     [--preview FOLDER]
+Usage: python3 tools/restyle_frame.py CAR_APPCONSOLE_SWF OUT_SWF [--palette night|deep] [--straight]
+                                     [--radius N] [--preview FOLDER]
 
 Takes **your car's own** Apps\\AppConsole\\AppConsole.swf (from the drive log, in ~/.s2am). It
 holds the art for the whole frame, and for every button on every screen: SYNC's button class
@@ -25,7 +25,11 @@ car's file: only the named pictures (and, with --radius, that one class) may dif
 that is not the frame this was made for (other pictures or sizes) is refused. --preview FOLDER
 gets Ford's pictures and ours side by side (Ford's artwork: keep it private). --palette picks
 restyle_art's colours: "night" (the default, R4a) or "deep", near black, for the car's screen,
-which shows dark greys far lighter than their numbers.
+which shows dark greys far lighter than their numbers. --straight drops the slant of the pieces
+between the bars (the clock at the top; Info, Home and Settings at the bottom): the parts that
+hang outside the bars turn transparent and the bars run straight across the screen; the
+selected piece gets a line along its top. The touch areas stay as they are: SYNC uses each
+picture's whole rectangle.
 """
 from __future__ import annotations
 
@@ -63,6 +67,11 @@ PIECES = {
     309: ((72, 59), False, ("home", 36, 32.5, 28)), 311: ((72, 59), True, ("home", 36, 32.5, 28)),
     323: ((72, 59), False, ("road", 36, 32, 26)), 325: ((72, 59), True, ("road", 36, 32, 26)),
 }
+# With --straight the pieces lose Ford's slant. On the screen the bars run from y=0 to 47 and from
+# 432 to 479; the clock's piece (at y=0) hangs below the top bar, the others (all at y=421, in
+# sprite 366 at 413) rise 11 px above the bottom bar.
+TOP_PIECE, OVERHANG = 249, 11
+
 # Icons alone: id -> (size, icon, colour (a restyle_art name, read when drawn), icon size)
 ICONS = {
     103: ((23, 28), "person_voice", "TEXT", 21), 127: ((23, 28), "person_voice", "DIM", 21),
@@ -112,7 +121,7 @@ def parse_strip(name: str) -> tuple[str, int, int | None]:
     return state, int(base[len(state):]), int(area) if area else None
 
 
-def artwork(data: bytes) -> dict[int, Image.Image]:
+def artwork(data: bytes, straight: bool = False) -> dict[int, Image.Image]:
     """Our pictures for the frame, by id, after checking it is the frame this was made for."""
     head, body = swf_bitmaps.unpack(data)
     found = swf_bitmaps.pictures(body)
@@ -138,7 +147,12 @@ def artwork(data: bytes) -> dict[int, Image.Image]:
     for ident, (size, area, top) in BARS.items():
         new[ident] = art.bar(size, area, top)
     for ident, (size, pressed, icon) in PIECES.items():
-        new[ident] = art.flatten(pictures[ident], pressed, icon)
+        if not straight:
+            new[ident] = art.flatten(pictures[ident], pressed, icon)
+        elif ident == TOP_PIECE:
+            new[ident] = art.straight(size, pressed, (0, 48), icon)
+        else:
+            new[ident] = art.straight(size, pressed, (OVERHANG, size[1]), icon, line=pressed)
     for ident, (size, name, colour_name, icon_size) in ICONS.items():
         new[ident] = art.icon(size, name, colour(colour_name), icon_size)
     for ident, level in SIGNAL.items():
@@ -181,6 +195,22 @@ def check(old: bytes, new: bytes, pictures: set[int], radius: bool) -> None:
         raise SystemExit(f"tags changed that should not have: {sorted(changed - allowed)}")
 
 
+# Where SYNC puts the frame's pictures on the 800x480 screen (ACBezelButtons and sprite 367/366),
+# with Home selected: the corner bars, the clock's piece, then Info (with its icon), Home, Settings
+LAYOUT = [(232, (-2, 0)), (236, (468, 0)), (240, (-2, 432)), (245, (468, 432)), (249, (274, 0)),
+          (260, (272, 421)), (268, (324, 437)), (311, (362, 421)), (252, (434, 421))]
+
+
+def mock(new: dict[int, Image.Image]) -> Image.Image:
+    """The frame alone, as SYNC lays it out on Home, on the screen's black."""
+    screen = Image.new("RGBA", (800, 480), (0, 0, 0, 255))
+    for ident, (x, y) in LAYOUT:
+        layer = Image.new("RGBA", screen.size, (0, 0, 0, 0))
+        layer.paste(new[ident], (x, y))
+        screen.alpha_composite(layer)
+    return screen.convert("RGB")
+
+
 def preview(data: bytes, new: dict[int, Image.Image], folder: Path) -> None:
     """Ford's pictures (left) and ours (right), enlarged two times, on the screen's black."""
     body = swf_bitmaps.unpack(data)[1]
@@ -213,22 +243,42 @@ def preview(data: bytes, new: dict[int, Image.Image], folder: Path) -> None:
     ImageDraw.Draw(sheet).line((sheet.width // 2, 0, sheet.width // 2, sheet.height), fill=(80, 80, 80))
     folder.mkdir(parents=True, exist_ok=True)
     sheet.save(folder / "frame-ford-vs-ours.png")
+    mock(new).save(folder / "frame-on-home.png")
     for ident, image in new.items():
         image.save(folder / f"{ident}.png")
 
 
-def main(argv: list[str]) -> None:
-    radius = int(argv[argv.index("--radius") + 1]) if "--radius" in argv else None
-    folder = Path(argv[argv.index("--preview") + 1]) if "--preview" in argv else None
-    palette = argv[argv.index("--palette") + 1] if "--palette" in argv else "night"
-    args = [a for i, a in enumerate(argv) if not a.startswith("--")
-            and (i == 0 or argv[i - 1] not in ("--radius", "--preview", "--palette"))]
+def options(argv: list[str]) -> tuple[str, str, str, bool, int | None, Path | None]:
+    """The command line: (source, target, palette, straight, radius, preview folder). An option
+    without its value, an unknown option or a missing file name stops with the usage."""
+    values, flags, args, i = {}, set(), [], 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg in ("--radius", "--preview", "--palette"):
+            if i + 1 == len(argv) or argv[i + 1].startswith("--"):
+                raise SystemExit(__doc__)
+            values[arg], i = argv[i + 1], i + 2
+            continue
+        if arg == "--straight":
+            flags.add(arg)
+        elif arg.startswith("--"):
+            raise SystemExit(__doc__)
+        else:
+            args.append(arg)
+        i += 1
+    radius = int(values["--radius"]) if "--radius" in values else None
+    palette = values.get("--palette", "night")
     if len(args) != 2 or (radius is not None and not 1 <= radius <= 12) or palette not in art.PALETTES:
         raise SystemExit(__doc__)
+    folder = Path(values["--preview"]) if "--preview" in values else None
+    return args[0], args[1], palette, "--straight" in flags, radius, folder
+
+
+def main(argv: list[str]) -> None:
+    source, target, palette, straight, radius, folder = options(argv)
     art.use(palette)
-    source, target = args
     data = Path(source).read_bytes()
-    new = artwork(data)
+    new = artwork(data, straight)
     result = swf_bitmaps.replace(data, new)
     if radius is not None:
         head, body = swf_bitmaps.unpack(result)
@@ -237,8 +287,9 @@ def main(argv: list[str]) -> None:
     Path(target).write_bytes(result)
     if folder:
         preview(data, new, folder)
-    print(f"{target}: {len(new)} pictures restyled ({palette})" + (f", corner radius {radius}" if radius else "")
-          + f"; everything else byte for byte; sha256 {hashlib.sha256(result).hexdigest()[:16]}, {len(result)} bytes")
+    style = palette + (", straight" if straight else "") + (f", corner radius {radius}" if radius else "")
+    print(f"{target}: {len(new)} pictures restyled ({style}); everything else byte for byte; "
+          f"sha256 {hashlib.sha256(result).hexdigest()[:16]}, {len(result)} bytes")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 """Make the "Night" colour theme (plan phase R1) from the car's own theme files.
 
-Usage: python3 tools/make_theme.py CAR_THEMES_FOLDER OUTFOLDER [--borderless [--palette night|deep]]
+Usage: python3 tools/make_theme.py CAR_THEMES_FOLDER OUTFOLDER [--borderless [--palette night|deep]] [--no-glow]
 CAR_THEMES_FOLDER is the drive log's copy of \\8inchSkins\\Ford\\Sync\\Themes (in ~/.s2am).
 
 Writes Theme.XML and yellow/green/red/blue.bmp for `s2am job theme --from OUTFOLDER`:
@@ -11,7 +11,8 @@ Writes Theme.XML and yellow/green/red/blue.bmp for `s2am job theme --from OUTFOL
   phase R4a stand on the black without a frame.
 - The gradients: a thinner, calmer glow in the new accent colours, drawn into exactly the
   original format (the car's own 70-byte header, 800x240, 16-bit RGB565, bottom-up), so
-  every file keeps its size.
+  every file keeps its size. With --no-glow they are black: SYNC draws them under an area's
+  screen where its corner bar slides away, and at 16 bits a glow shows as stripes.
 Ford's files never go into this repository: the output is built from your car's copy.
 """
 import re
@@ -58,7 +59,7 @@ def theme_xml(original: bytes, borderless: bool = False, palette: str = "night")
     return result
 
 
-def gradient(original: bytes, accent) -> bytes:
+def gradient(original: bytes, accent, glow: bool = True) -> bytes:
     offset, header, width, height, _planes, bits, compression = struct.unpack_from("<IIiiHHI", original, 10)
     masks = struct.unpack_from("<III", original, 54)
     if (offset, header, width, height, bits, compression, masks) != (70, 56, 800, 240, 16, 3, (0xF800, 0x7E0, 0x1F)):
@@ -68,7 +69,7 @@ def gradient(original: bytes, accent) -> bytes:
         pixel = struct.unpack_from("<H", original, offset + row * width * 2 + width)[0]
         return (pixel >> 11) + ((pixel >> 5) & 63) // 2 + (pixel & 31)
     glow_at_top = brightness(height - 1) > brightness(0)
-    edge, reach = GLOW
+    edge, reach = GLOW if glow else (0.0, 1)
     pixels = bytearray()
     for row in range(height):  # bottom-up
         distance = (height - 1 - row) if glow_at_top else row  # from the bright edge
@@ -82,20 +83,21 @@ def gradient(original: bytes, accent) -> bytes:
     return built
 
 
-def main(car: str, out: str, borderless: bool = False, palette: str = "night") -> None:
+def main(car: str, out: str, borderless: bool = False, palette: str = "night", glow: bool = True) -> None:
     car_folder, out_folder = Path(car), Path(out)
     out_folder.mkdir(parents=True, exist_ok=True)
     (out_folder / "Theme.XML").write_bytes(theme_xml((car_folder / "Theme.XML").read_bytes(), borderless, palette))
     for name, accent in NIGHT:
-        (out_folder / name).write_bytes(gradient((car_folder / name).read_bytes(), accent))
+        (out_folder / name).write_bytes(gradient((car_folder / name).read_bytes(), accent, glow))
     print(f"Night theme in {out_folder}: Theme.XML" + (f" (borderless buttons, {palette})" if borderless else "")
-          + f" and {len(NIGHT)} gradients, sizes unchanged")
+          + f" and {len(NIGHT)} gradients{'' if glow else ' (black)'}, sizes unchanged")
 
 
 if __name__ == "__main__":
     argv = sys.argv[1:]
-    palette = argv[argv.index("--palette") + 1] if "--palette" in argv else "night"
+    palette = (argv + [""])[argv.index("--palette") + 1] if "--palette" in argv else "night"
     args = [a for i, a in enumerate(argv) if not a.startswith("--") and (i == 0 or argv[i - 1] != "--palette")]
-    if len(args) != 2 or palette not in restyle_art.PALETTES or ("--palette" in argv and "--borderless" not in argv):
+    unknown = [a for a in argv if a.startswith("--") and a not in ("--borderless", "--palette", "--no-glow")]
+    if len(args) != 2 or unknown or palette not in restyle_art.PALETTES or ("--palette" in argv and "--borderless" not in argv):
         raise SystemExit(__doc__)
-    main(args[0], args[1], "--borderless" in argv, palette)
+    main(args[0], args[1], "--borderless" in argv, palette, "--no-glow" not in argv)

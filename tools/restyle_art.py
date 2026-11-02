@@ -85,6 +85,23 @@ def flatten(original: Image.Image, pressed: bool, icon: tuple | None = None) -> 
     return image
 
 
+def straight(size: tuple[int, int], pressed: bool, band: tuple[int, int], icon: tuple | None = None,
+             line: bool = False) -> Image.Image:
+    """A bar piece without Ford's slant: flat in rows band[0] to band[1] - 1 (where the bars run),
+    transparent above and below, so the bar is one straight band. A line in the system's colour
+    along the band's top marks the selected piece (line=True)."""
+    top, bottom = band
+    image = Image.new("RGBA", size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(image)
+    d.rectangle((0, top, size[0] - 1, bottom - 1), fill=(*(BAR_PRESSED if pressed else BAR), 255))
+    if line:
+        d.rectangle((0, top, size[0] - 1, top + LINE - 1), fill=(*ACCENTS[0], 255))
+    if icon:
+        name, x, y, icon_size = icon
+        icons.paste(image, name, x, y, icon_size, (*(TEXT if pressed else QUIET), 255), WEIGHT)
+    return image
+
+
 def bar(size: tuple[int, int], area: int, line_at_top: bool) -> Image.Image:
     """One of the four corner bars: flat, with its area's line where Ford's was."""
     width, height = size
