@@ -3,6 +3,45 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
+## Femte turen: rak ram, nästan svart, Hem som kort (förberett 2026-11-02)
+
+Fjärde turen visade att bilens skärm gör mörkgrått ljust, så allt flyttas närmare svart. Dessutom
+kommer de första ändringarna av layouten:
+
+- **Ramen:** listerna upptill och nedtill går raka över hela skärmen, utan Fords sneda mittbitar
+  (klockans fält upptill; Info, Hem och Inställningar nedtill). Den valda knappen får ett grått
+  streck upptill. Bara bilder byts: knapparna sitter kvar och tar emot tryck som förut.
+- **Färgerna:** nästan svarta knappar och lister, knapparnas kant i knappens egen färg, och inga
+  glödband i områdena (det gula randiga fältet uppe till vänster på Telefon försvinner).
+- **Hem:** de fyra hörnen i var sitt kort med en färgad kant till vänster (telefon gul,
+  navigering grön, media röd, klimat blå) på svart. Innehållet i korten är Fords, som förut. Hem
+  läses när SYNC startar, precis som ramen.
+
+- **SYNC-stickan:** `bundle-6bce`: Fords färger och ram tillbaka, sedan de nya färgerna, den
+  raka ramen och sist Hem. Stannar något tidigare körs inget efter det.
+- **UNTITLED 2:** `bundle-1b62`: Fords ram, Fords Hem och Fords färger. Dimningen, Apps-rutorna
+  och samtalshistoriken ligger kvar.
+- Generalrepeterat på en simulerad SYNC i bilens läge just nu: på och av byte för byte. Båda
+  stickorna skrivna, lästa tillbaka efter ommontering, märkta och utmatade 2026-11-02.
+
+I bilen:
+
+1. Parkerad, motorn igång. Stoppa i SYNC-stickan och vänta: "Install successfully completed",
+   sedan startar SYNC om.
+2. **Foto** av Hem, Telefon (Samtalshistorik), Klimat, kartan och Inställningar > Display, gärna
+   både i dagsljus och i mörker. Och med egna ögon: ser listerna och knapparna mörka ut?
+3. Hem: tryck mitt i varje kort (Telefon, Karta, Media och Klimat ska öppnas), en förinställd
+   station, Stör inte och sätesvärmen (stängs den av igen?).
+4. Prova: ett samtal in och ett ut, radion, klimatet (temperatur, fläkt, A/C, **MAX DEFROST**),
+   **backen och kameran**, röstknappen. På kartan: Mål och Meny.
+5. Dimningen: Läge Auto, Autom. dimning På, tryck − fler än fem gånger, stäng Display och öppna
+   den igen. Vad står förskjutningen på, och blev skärmen mörkare? + eller återställning tar
+   tillbaka den.
+6. **Om skärmen förblir svart eller Hem är tomt:** stoppa i UNTITLED 2 ändå och vänta två
+   minuter. Installationstjänsten går vid sidan av skärmarna. Sedan mjuk omstart (vredet och ⏭
+   i tio sekunder).
+7. Ser något fel ut: UNTITLED 2. Ta med fotona och båda stickorna till Macen.
+
 ## Fjärde turen: ramen lagad, mörkare dimning (2026-11-02)
 
 Tredje turens fel var vårt, inte Fords: bilder utan genomskinlighet fick 0 i en byte som bilen
