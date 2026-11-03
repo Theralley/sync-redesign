@@ -10,9 +10,12 @@ them to the places build_home.OURS gives. Everything inside them is Ford's; this
 and scales placements and resizes text fields, through FFDec's XML form (EDITS, in quadrant
 pixels), so that each quadrant's content sits centred in its card below the heading and nothing
 crosses a card edge. No clip is removed or renamed, no tag added: a clip that must not show (the
-compass ball) is moved off-stage; the theme's outline clip of the preset and "do not disturb"
-buttons is scaled to nothing. Every button keeps its hit clip, its label clip and its press and
-release handling (the climate and call controls are safety items).
+compass ball) is moved off-stage. Every button keeps its hit clip, its label clip and its press
+and release handling (the climate and call controls are safety items), and its `DayNight` clip
+Ford's placement: the theme draws each button's 1 px outline into that clip at run time
+(SyncThemeButtonArt.DrawIt: a rectangle of the button's size at the clip's origin, then resized
+to the button's base box), so with Ford's placement the outline lands exactly on the chip's
+fill; a clip scaled to nothing came back one row higher in the car (2026-11-03).
 
 One number pair is changed in code, in place, same length: PhoneSmartCorner.UpdateIconLayout
 lays the visible status icons out left to right and then centres the row on the quadrant
@@ -26,7 +29,8 @@ its size, bounds, alignment and colour only; the phone class in its twelve bytes
 every value is read back from a second swf2xml. A file that is not the one this was made for
 (another placement at a depth, other numbers) is refused, and so is a result as long as the
 car's file (the car checks a copy by its size alone): NavSmartCorner's street-field placement
-is therefore stored one field width wider, same values. Needs Docker (FFDec, see
+and PhoneSmartCorner's message-field placement are therefore stored one field width wider,
+same values. Needs Docker (FFDec, see
 build_apps_menu). Keep OUT_FOLDER private: the results hold Ford's artwork.
 """
 from __future__ import annotations
@@ -45,7 +49,6 @@ import xmlswf as X
 
 FILES = {"PhoneSmartCorner": "Phone/PhoneSmartCorner.swf", "NavSmartCorner": "Nav/NavSmartCorner.swf",
          "MediaSmartCorner": "Media/MediaSmartCorner.swf", "ClimateSmartCorner": "Climate/ClimateSmartCorner.swf"}
-ZERO = (0.0, 0.0)  # a placement scaled to nothing: the clip stays, its children draw no pixel
 FLAT = (1.0, 0.0)  # a divider inside a theme button: x kept (its frame script resets it), no height
 
 # The quadrant files' content, in quadrant pixels, laid out for cards whose body (below the
@@ -62,7 +65,6 @@ EDITS = {
             (101, 1, "bgButton", {"scale": (220 / 156, 44 / 40)}),  # the chip: 220x44 instead of 208x50
             (101, 7, "txtButton", {"x": 17, "y": 9}),
             (101, 8, "LEDOne", {"x": 222, "y": 22}),
-            (90, 5, "DayNight", {"scale": ZERO}),  # the theme draws its 1 px outline into this clip
         ],
         "texts": {},
     },
@@ -108,7 +110,6 @@ EDITS = {
             (78, 59, "compPreset5", {"x": 122, "y": 48}),
             (78, 71, "compPreset6", {"x": 244, "y": 48}),
             *[(s, 1, "bgPanel", {"scale": (112 / 156, 1.0)}) for s in (49, 56, 63, 67, 73, 77)],
-            *[(s, d, "DayNight", {"scale": ZERO}) for s, d in ((47, 11), (54, 11), (61, 13), (65, 11), (71, 9), (75, 11))],
             *[(s, d, "", {"scale": FLAT}) for s, d in ((47, 9), (54, 9), (61, 9), (61, 11), (65, 9), (71, 5), (71, 7), (75, 9))],
         ],
         "texts": {},
@@ -135,12 +136,13 @@ EDITS = {
                   68: {"fontHeight": 400, "Xmax": 1160, "Ymax": 560, "align": 1, "color": (150, 156, 168)}},
     },
 }
-# A result must not keep the car's file length (xmlswf.check_length). NavSmartCorner's edits
-# leave it exactly as long as Ford's, so one placement this tool moves anyway, the street
-# field's (currentStreetTxt: main timeline, depth 15, character 12), is re-encoded with a wider
-# translation field: same values, a longer tag (swf_place.move with grow, frame v2's device;
-# it takes a field up to 15 bits wide, which rules out the compass placement at 16).
-GROW = {"NavSmartCorner": (None, 15, 12)}
+# A result must not keep the car's file length (xmlswf.check_length). NavSmartCorner's and
+# PhoneSmartCorner's edits leave them exactly as long as Ford's, so one placement this tool
+# moves anyway (the street field, currentStreetTxt: main timeline, depth 15, character 12; the
+# phone's message field, mcTextFieldCntrInst: main, depth 39, character 104) is re-encoded with
+# a wider translation field: same values, a longer tag (swf_place.move with grow, frame v2's
+# device; it takes a field up to 15 bits wide, which rules out placements at 16).
+GROW = {"NavSmartCorner": (None, 15, 12), "PhoneSmartCorner": (None, 39, 104)}
 PHONE_CLASS = "__Packages.PhoneSmartCorner"
 ICON_LAYOUT = {"int": (200, 385), "double": (0.5, 1.0)}  # Ford's and ours: icons._x = INT - total * DOUBLE
 
@@ -181,6 +183,41 @@ SIZERS = {"PhoneSmartCorner": [5], "MediaSmartCorner": [6], "ClimateSmartCorner"
 # Preview variants: the chip colour, and sample texts added to the idle state of one file
 VARIANTS = {"": ((13, 14, 18), {}), "22": ((22, 24, 30), {}),
             "temps": ((13, 14, 18), {"ClimateSmartCorner": {67: "22.0°", 68: "22.0°"}})}
+
+
+# What the theme draws on each button at run time, for the preview: a 1 px outline on the
+# button's base box (the strip's box), corners rounded (r=3) only where the shape type rounds
+# them. Boxes in quadrant px, derived from EDITS so the picture follows the table.
+BASE = (156, 40)  # SyncThemeButtonArt.BASE_WIDTH/HEIGHT: every theme button's local box
+TL, TM, TR, BL, BM, BR = (1, 0, 0, 0), (0, 0, 0, 0), (0, 1, 0, 0), (0, 0, 0, 1), (0, 0, 0, 0), (0, 0, 1, 0)  # (tl, tr, br, bl)
+SOLO, RIBBON_L, RIBBON_R = (1, 1, 1, 1), (1, 0, 0, 1), (0, 1, 1, 0)
+
+
+def edit(name: str, container, depth: int) -> dict:
+    hits = [change for which, d, _, change in EDITS[name]["places"] if which == container and d == depth]
+    if len(hits) != 1:
+        raise KeyError((name, container, depth))
+    return hits[0]
+
+
+def chip_boxes(name: str) -> list[tuple[float, float, float, float, tuple[int, int, int, int]]]:
+    """(x, y, w, h, corners) of every theme button the idle preview shows in this quadrant."""
+    if name == "MediaSmartCorner":
+        panel = edit(name, "main", 51)
+        sx, sy = edit(name, 49, 1)["scale"]
+        return [(panel["x"] + edit(name, 78, depth)["x"], panel["y"] + edit(name, 78, depth)["y"], BASE[0] * sx, BASE[1] * sy, corners)
+                for depth, corners in ((1, TL), (29, TM), (45, TR), (15, BL), (59, BM), (71, BR))]
+    if name == "PhoneSmartCorner":
+        panel, (sx, sy) = edit(name, "main", 37), edit(name, 101, 1)["scale"]
+        return [(panel["x"], panel["y"], BASE[0] * sx, BASE[1] * sy, SOLO)]
+    if name == "ClimateSmartCorner":  # the heated-seat buttons: 66x60 at panel-local x 66 (driver) and 0 (passenger), by the code
+        out = []
+        for depth, local_x, corners in ((11, 66, RIBBON_L), (48, 0, RIBBON_R)):
+            panel = edit(name, "main", depth)
+            s = panel["scale"][0]
+            out.append((panel["x"] + local_x * s, panel["y"], 66 * s, 60 * s, corners))
+        return out
+    return []
 
 
 # ------------------------------------------------------------------ the code change

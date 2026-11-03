@@ -56,7 +56,7 @@ def xml(places, texts=(), shapes=()):
 
 
 SPEC = {"places": [("main", 11, "icons", {"y": 8}), (101, 1, "bgButton", {"scale": (1.5, 1.1)}), (101, 8, "LEDOne", {"x": 222, "y": 22}),
-                   (90, 5, "DayNight", {"scale": build.ZERO})],
+                   (90, 5, "DayNight", {"scale": (0.0, 0.0)})],
         "texts": {67: {"fontHeight": 400, "Xmax": 1160, "Ymax": 560, "align": 1, "color": (150, 156, 168)},
                   12: {"fontHeight": 600, "size": 30, "Ymax": 740}}}
 PLACES = [("main", 11, "icons", 87, {"translateX": "1580", "translateY": "850"}),
@@ -185,8 +185,9 @@ class Length(unittest.TestCase):
         self.assertEqual([k for (k, x), (_, y) in zip(keys_before, keys_after) if x != y], [("main", "PlaceObject2", 15, "")])
         self.assertTrue(X.same_but(26, dict(keys_before)[("main", "PlaceObject2", 15, "")], dict(keys_after)[("main", "PlaceObject2", 15, "")], ("matrix",)))
         self.assertEqual(build.grow("MediaSmartCorner", body), body)
-        self.assertEqual(build.GROW["NavSmartCorner"], (None, 15, 12))
+        self.assertEqual(build.GROW, {"NavSmartCorner": (None, 15, 12), "PhoneSmartCorner": (None, 39, 104)})
         self.assertIn(("main", 15, "currentStreetTxt"), [e[:3] for e in build.EDITS["NavSmartCorner"]["places"]])
+        self.assertIn(("main", 39, "mcTextFieldCntrInst"), [e[:3] for e in build.EDITS["PhoneSmartCorner"]["places"]])
 
 
 class Idle(unittest.TestCase):
@@ -217,6 +218,19 @@ class Idle(unittest.TestCase):
         self.assertEqual(X.matrix_values(X.placement(X.container(root, "main"), name="icons"))[:2], (str((385 - total) * 20), "160"))
         colour = X.define(root, "DefineShapeTag", 5).find("shapes").find("fillStyles").find("fillStyles")[0].find("color")
         self.assertEqual([colour.get(k) for k in ("red", "green", "blue")], ["13", "14", "18"])
+
+    def test_no_daynight_clip_is_touched_and_the_outline_boxes_are_the_chips(self):
+        for name, spec in build.EDITS.items():
+            self.assertNotIn("DayNight", [placed for _, _, placed, _ in spec["places"]], name)
+        media = build.chip_boxes("MediaSmartCorner")
+        self.assertEqual([(x, y) for x, y, _, _, _ in media], [(22, 92), (144, 92), (266, 92), (22, 140), (144, 140), (266, 140)])
+        self.assertTrue(all((round(w, 6), h) == (112, 40) for _, _, w, h, _ in media))
+        self.assertEqual([c for *_, c in media], [build.TL, build.TM, build.TR, build.BL, build.BM, build.BR])
+        (x, y, w, h, corners), = build.chip_boxes("PhoneSmartCorner")
+        self.assertEqual((x, y, round(w, 6), h, corners), (90, 118, 220, 44, build.SOLO))
+        seats = build.chip_boxes("ClimateSmartCorner")
+        self.assertEqual([(round(x, 2), y, w, h) for x, y, w, h, _ in seats], [(86.75, 74.5, 82.5, 75), (227.75, 74.5, 82.5, 75)])
+        self.assertEqual(build.chip_boxes("NavSmartCorner"), [])
 
     def test_variants_name_the_chip_colours_and_the_temperature_sample(self):
         self.assertEqual(build.VARIANTS[""][0], (13, 14, 18))

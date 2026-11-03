@@ -18,7 +18,7 @@ import restyle_art as art  # noqa: E402
 import swf_actions  # noqa: E402
 import swf_bitmaps  # noqa: E402
 import swf_place  # noqa: E402
-from build_phone_history import class_actions  # noqa: E402
+from build_phone_history import class_actions, numbers  # noqa: E402
 from test_swf_place import place, tag  # noqa: E402
 
 STAGE = bytes([0x50, 0, 0, 0, 0, 0]) + struct.pack("<HH", 15 << 8, 1)
@@ -152,6 +152,50 @@ class Patches(unittest.TestCase):
         self.assertEqual(len(same), len(code) + 1)
 
 
+class Outline(unittest.TestCase):
+    def code(self, alpha=100, twice=False):
+        pool = ["CORNER_RADIUS", "STROKE", "LINE_ALPHA"]
+        values = [3, 1, alpha] + ([alpha] if twice else [])
+        names = [0, 1, 2] + ([2] if twice else [])
+        data = b"".join(bytes([8, n, 7]) + struct.pack("<i", v) for n, v in zip(names, values))
+        return constant_pool(pool) + b"\x96" + struct.pack("<H", len(data)) + data + b"\x00"
+
+    def test_the_outline_alpha_turns_zero_in_place_and_nothing_else(self):
+        old = self.code()
+        new = build_frame.outline_alpha(old)
+        self.assertEqual(len(new), len(old))
+        self.assertEqual({n: v for n, v, _ in numbers(new)}, {"CORNER_RADIUS": 3, "STROKE": 1, "LINE_ALPHA": 0})
+        self.assertEqual(sum(a != b for a, b in zip(old, new)), 1)  # 100 -> 0: one byte
+
+    def test_refuses_a_class_whose_alpha_is_not_fords_once(self):
+        for code in (self.code(alpha=90), self.code(twice=True), constant_pool(["x"]) + b"\x00"):
+            with self.subTest(), self.assertRaises(SystemExit):
+                build_frame.outline_alpha(code)
+
+    def test_the_frame_builds_class_step_patches_the_alpha_and_verifies_the_class(self):
+        body = swf_bitmaps.unpack(flash(build_frame.ART_CLASS, 5, self.code()))[1]
+        new, classes = build_frame.patch_classes("AppConsole", body)
+        code = swf_bitmaps.tags(new)[class_actions(new, build_frame.ART_CLASS)][2][2:]
+        self.assertEqual({n: v for n, v, _ in numbers(code)}, {"CORNER_RADIUS": 3, "STROKE": 1, "LINE_ALPHA": 0})
+        self.assertEqual(classes, {class_actions(body, build_frame.ART_CLASS)})
+        self.assertEqual(sum(a != b for a, b in zip(body, new)), 1)
+
+    def test_a_class_changed_beyond_the_one_operand_is_refused(self):
+        body = swf_bitmaps.unpack(flash(build_frame.ART_CLASS, 5, self.code()))[1]
+        patched, _ = build_frame.patch_classes("AppConsole", body)
+        code = swf_bitmaps.tags(patched)[class_actions(patched, build_frame.ART_CLASS)][2][2:]
+        radius = next(o for n, _, o in numbers(code) if n == "CORNER_RADIUS")
+        tampered = patched.replace(code, code[:radius] + struct.pack("<i", 99) + code[radius + 4:])
+        with self.assertRaisesRegex(SystemExit, "outside the patch"):
+            build_frame.verify_class(body, tampered, build_frame.ART_CLASS, lambda c: build_frame.integer_operand(c, "LINE_ALPHA"))
+        with self.assertRaisesRegex(SystemExit, "outside the patch"):  # nothing changed at all is wrong too
+            build_frame.verify_class(body, body, build_frame.ART_CLASS, lambda c: build_frame.integer_operand(c, "LINE_ALPHA"))
+
+    def test_without_the_strips_the_frame_build_is_refused_before_any_patch(self):
+        with self.assertRaises(SystemExit):
+            build_frame.build_one("AppConsole", flash(build_frame.ART_CLASS, 5, self.code()))
+
+
 class Files(unittest.TestCase):
     def nav(self, street=(748, -20)):
         places = (place(1, 14, *street, 11) + place(9, 19, 260, -69, 11) + place(12, 24, 1040, 20, 12)
@@ -170,6 +214,23 @@ class Files(unittest.TestCase):
         self.assertEqual(pushes[-1], ["_visible", False])
         self.assertEqual(len(changed), 5)  # the class and the four placements
         self.assertGreater(len(new), len(old))  # the street's matrix one field wider: never Ford's length
+
+    def test_the_climate_consoles_home_label_is_parked_beyond_the_screen(self):
+        """The climate console object hangs from the bottom bar: a park of -100 px lands inside the
+        climate card (seen in the car 2026-11-03); it must be more than a screen height away."""
+        y = next(new[1] for sprite, depth, char, _, new in build_frame.MOVES["ClimateConsoleObject"] if (sprite, depth, char) == (None, 1, 3))
+        self.assertLessEqual(y, -480 * 20)
+
+    def test_every_parked_clip_stays_above_the_screen_from_its_consoles_origin(self):
+        origins = {"PhoneConsoleObject": (2, 2), "NavConsoleObject": (2, -48), "ClimateConsoleObject": (430, 480)}
+        parked = [("PhoneConsoleObject", None, 25, 58), ("NavConsoleObject", None, 12, 24),
+                  ("NavConsoleObject", None, 22, 48), ("ClimateConsoleObject", None, 1, 3)]  # P1, the compass x2, C1
+        for name, sprite, depth, character in parked:
+            move = next((m for m in build_frame.MOVES[name] if m[:3] == (sprite, depth, character)), None)
+            self.assertIsNotNone(move, f"{name} {depth}/{character} is no longer moved")
+            y = move[4][1]
+            for origin in origins[name]:  # the console's screen y, and where BezelButton.SnapOffScreen parks it
+                self.assertLess(origin + y / 20 + 60, 0, f"{name} depth {depth} would show at y {origin + y / 20}")
 
     def test_refuses_to_write_a_result_as_long_as_the_cars_file(self):
         grown = build_frame.GROW

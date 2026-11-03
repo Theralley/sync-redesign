@@ -26,7 +26,13 @@ lives in the pieces now, the only way its colour can follow frame 1/2) and the a
 (ACUpstream.SetAlertPendingIndicator) our icon in the phone accent. Three placements move
 (swf_place): iconHome 362 -> 364 (centre 400), the alert overlay onto the piece's icon, and the
 1 px separator Ford hid under its slanted pieces off the screen. There is no pressed picture:
-the launch buttons are PlainButtons with an available and a selected frame only.
+the launch buttons are PlainButtons with an available and a selected frame only. And one integer
+in the class SyncThemeButtonArt: LINE_ALPHA 100 -> 0, so the 1 px outline SYNC strokes round every
+button (DrawOutline: the theme's System day/night colour, or its hard-coded grey for a disabled
+button, and the same stroke for the voice "speakable" highlight) is invisible on every screen;
+the seventh visit showed it still light on the climate, radio and call-history buttons, whose
+skins hold nothing but the strip and that stroke. Not yet: Phone.swf's left menu, which is the
+phone app's own glass pictures (another start-up file; next).
 
 The console objects (start-up files too): placements only. The clock field centred on 400; the
 phone, street and climate texts moved so phone (x 16) / clock / street (right edge 784) share
@@ -39,7 +45,9 @@ three launch buttons (its cards carry the four names):
   tab view's and untouched;
 - N3: in NavConsoleObject.SetConsoleView the Home branch's `compSystemStatus._visible = true`
   becomes false (one byte in the class; swf_actions finds it by the instructions round it);
-- C1: the climate console's home-only clip (the word "Klimat") off the stage;
+- C1: the climate console's home-only clip (the word "Klimat") off the stage: 600 px up, because this
+  console object hangs from the bottom bar (screen y 430, 480 when its tab slides away), so 100 px
+  would land inside Home's climate card;
 - M1: MediaConsoleStrings' Entertainment label (shown in the media corner on Home only) blanked:
   its resource key altered by one character so the lookup misses, its default "" (13 bytes
   shorter), both in the class's constant pool, in MediaConsoleObject.swf and in Media.swf, which
@@ -74,10 +82,14 @@ import restyle_frame
 import swf_actions
 import swf_bitmaps
 import swf_place
-from build_phone_history import class_actions
+from build_phone_history import class_actions, numbers
 
 PALETTE = "v2"
-OFF_STAGE = -2000  # twips: a clip parked above the screen (y -100)
+OFF_STAGE = -2000  # twips: a clip parked above the screen (y -100) -- for the top bar's console objects
+# The climate console object hangs from the bottom bar (its origin is at y ~430), so y -100 put the
+# word "Klimat" 100 px up, inside the climate card (seen in the car 2026-11-03): its park is far
+# above the screen instead, further than any slide of the console object (BezelButton.SnapOffScreen).
+OFF_STAGE_BOTTOM = -12000  # twips: y -600
 FILES = {"AppConsole": "AppConsole/AppConsole.swf", "MenuConsoleObject": "AppConsole/MenuConsoleObject.swf",
          "PhoneConsoleObject": "Phone/PhoneConsoleObject.swf", "NavConsoleObject": "Nav/NavConsoleObject.swf",
          "MediaConsoleObject": "Media/MediaConsoleObject.swf", "ClimateConsoleObject": "Climate/ClimateConsoleObject.swf",
@@ -113,10 +125,13 @@ MOVES = {
                          (None, 12, 24, (1040, 20), (1040, OFF_STAGE)), (None, 22, 48, (1102, 0), (1102, OFF_STAGE))],  # compass
     "MediaConsoleObject": [(117, d, c, xy, (xy[0] + MEDIA_ICON_DX, xy[1])) for d, c, xy in MEDIA_ICONS]
                           + [(117, d, c, xy, (xy[0] + MEDIA_TEXT_DX, xy[1])) for d, c, xy in MEDIA_TEXTS],
-    "ClimateConsoleObject": [(None, 1, 3, (-80, -40), (-100, OFF_STAGE)),  # C1: compClimateTabViewHome ("Klimat")
+    "ClimateConsoleObject": [(None, 1, 3, (-80, -40), (-100, OFF_STAGE_BOTTOM)),  # C1: compClimateTabViewHome ("Klimat")
                              (None, 3, 49, (-200, 0), (-200, 28))],  # temperatures, seats: the media text's baseline
     "Media": [],
 }
+# The outline SYNC draws round every button: SyncThemeButtonArt.DrawIt strokes it with LINE_ALPHA;
+# 0 makes it invisible whatever colour the theme, the button's disabled state or its timing gives it
+ART_CLASS, OUTLINE = "__Packages.SyncThemeButtonArt", ("LINE_ALPHA", 100, 0)
 # N3: the class, the branch's opener and the member whose `_visible = true` turns false
 NAV_CLASS, NAV_BRANCH = "__Packages.NavConsoleObject", ("isOnHomeScreen", "compSystemStatus", "_visible")
 # M1: the class and its two constant-pool strings, same lengths
@@ -127,7 +142,8 @@ STRINGS = {b"Resource.Media.ConsoleObject.146\0": b"Resource.Media.ConsoleObject
 # Ford's length: s2am refuses a start-up file as long as Ford's, because the car checks a copy by
 # its size alone
 GROW = {("MenuConsoleObject", None, 1, 2), ("PhoneConsoleObject", None, 25, 58), ("NavConsoleObject", None, 1, 14)}
-PATCHED_CLASS = {"NavConsoleObject": NAV_CLASS, "MediaConsoleObject": STRINGS_CLASS, "Media": STRINGS_CLASS}
+PATCHED_CLASS = {"AppConsole": ART_CLASS, "NavConsoleObject": NAV_CLASS, "MediaConsoleObject": STRINGS_CLASS,
+                 "Media": STRINGS_CLASS}
 
 
 def frame_pictures(data: bytes) -> dict[int, Image.Image]:
@@ -173,6 +189,20 @@ def patch_class(body: bytes, name: str, change) -> bytes:
     return b"".join(h + c for _, h, c in found)
 
 
+def outline_alpha(code: bytes) -> bytes:
+    """SyncThemeButtonArt.LINE_ALPHA 100 -> 0 in place (one integer, found by its name as
+    build_display and --radius find theirs), read back."""
+    name, ford, ours = OUTLINE
+    hits = [(v, o) for n, v, o in numbers(code) if n == name]
+    if len(hits) != 1 or hits[0][0] != ford:
+        raise SystemExit(f"{name} is not {ford} once in {ART_CLASS}: not the frame this tool was made for")
+    patched = bytearray(code)
+    struct.pack_into("<i", patched, hits[0][1], ours)
+    if [v for n, v, _ in numbers(bytes(patched)) if n == name] != [ours]:
+        raise SystemExit(f"{name} did not read back as written")
+    return bytes(patched)
+
+
 def nav_home_branch(code: bytes) -> bytes:
     """N3: the Home branch's `compSystemStatus._visible = true` -> false, read back."""
     at = swf_actions.branch_boolean(code, *NAV_BRANCH)
@@ -187,6 +217,64 @@ def nav_home_branch(code: bytes) -> bytes:
 def media_strings(code: bytes) -> bytes:
     """M1: the Entertainment label's key and default, same lengths, read back."""
     return swf_actions.replace_strings(code, STRINGS)
+
+
+def patch_classes(name: str, body: bytes) -> tuple[bytes, set[int]]:
+    """The file's class patches for `name`, and the indices of the class tags they touched. After
+    each patch the class is compared with the original: the same length and byte-equal outside
+    the bytes the patch may change (the one integer operand, the one boolean), or for the pool
+    patch byte-equal after the pool with only the named entries changed inside it."""
+    before = body
+    classes = set()
+    if name == "AppConsole":
+        body = patch_class(body, ART_CLASS, outline_alpha)
+        classes.add(verify_class(before, body, ART_CLASS, lambda code: integer_operand(code, OUTLINE[0])))
+    if name == "NavConsoleObject":
+        body = patch_class(body, NAV_CLASS, nav_home_branch)
+        classes.add(verify_class(before, body, NAV_CLASS, lambda code: {swf_actions.branch_boolean(code, *NAV_BRANCH)}))
+    if name in ("MediaConsoleObject", "Media"):
+        body = patch_class(body, STRINGS_CLASS, media_strings)
+        classes.add(verify_strings_class(before, body))
+    return body, classes
+
+
+def integer_operand(code: bytes, name: str) -> set[int]:
+    """The four bytes of the integer pushed after `name` (once)."""
+    offsets = [o for n, _, o in numbers(code) if n == name]
+    if len(offsets) != 1:
+        raise SystemExit(f"{name} is not once in the class")
+    return set(range(offsets[0], offsets[0] + 4))
+
+
+def verify_class(before: bytes, after: bytes, name: str, allowed) -> int:
+    """The class tag at the same index in both bodies: same length, byte-equal outside
+    `allowed(old code)`, and changed somewhere inside it. Returns the tag's index."""
+    index = class_actions(before, name)
+    if class_actions(after, name) != index:
+        raise SystemExit(f"{name} moved to another tag")
+    old, new = swf_bitmaps.tags(before)[index][2][2:], swf_bitmaps.tags(after)[index][2][2:]
+    if len(old) != len(new):
+        raise SystemExit(f"{name} changed its length")
+    differ = {i for i, (a, b) in enumerate(zip(old, new)) if a != b}
+    permitted = allowed(old)
+    if not differ or differ - permitted:
+        raise SystemExit(f"{name} changed outside the patch: bytes {sorted(differ - permitted)[:8]}")
+    return index
+
+
+def verify_strings_class(before: bytes, after: bytes) -> int:
+    """MediaConsoleStrings: byte-equal after the pool, the pool's entries equal but for STRINGS."""
+    index = class_actions(before, STRINGS_CLASS)
+    if class_actions(after, STRINGS_CLASS) != index:
+        raise SystemExit(f"{STRINGS_CLASS} moved to another tag")
+    old, new = swf_bitmaps.tags(before)[index][2][2:], swf_bitmaps.tags(after)[index][2][2:]
+    (o_at, o_pool), (n_at, n_pool) = swf_actions.pool(old), swf_actions.pool(new)
+    o_end, n_end = o_at + 3 + struct.unpack_from("<H", old, o_at + 1)[0], n_at + 3 + struct.unpack_from("<H", new, n_at + 1)[0]
+    wanted = {k[:-1].decode("latin1"): v[:-1].decode("latin1") for k, v in STRINGS.items()}
+    if (o_at, n_at) != (0, 0) or old[o_end:] != new[n_end:] or n_pool != [wanted.get(e, e) for e in o_pool] \
+            or len(n_pool) != len(o_pool):
+        raise SystemExit(f"{STRINGS_CLASS} changed outside the two strings")
+    return index
 
 
 def check(old: bytes, new: bytes, pictures: set[int], sprites: set[int], main_places: bool, classes: set[int]) -> list[int]:
@@ -220,13 +308,7 @@ def build_one(name: str, data: bytes) -> tuple[bytes, dict[int, Image.Image], li
         data_in = data
     head, body = swf_bitmaps.unpack(data_in)
     body = move_all(body, MOVES[name], name)
-    classes = set()
-    if name == "NavConsoleObject":
-        body = patch_class(body, NAV_CLASS, nav_home_branch)
-    if name in ("MediaConsoleObject", "Media"):
-        body = patch_class(body, STRINGS_CLASS, media_strings)
-    if name in PATCHED_CLASS:
-        classes = {class_actions(body, PATCHED_CLASS[name])}
+    body, classes = patch_classes(name, body)
     result = swf_bitmaps.pack(head, body)
     sprites = {m[0] for m in MOVES[name] if m[0] is not None}
     changed = check(data, result, set(pictures), sprites, any(m[0] is None for m in MOVES[name]), classes)

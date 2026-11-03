@@ -229,6 +229,16 @@ class Art(unittest.TestCase):
             self.assertGreaterEqual(build.OURS[name][1], build.CARDS[name][1] - 8)
 
 
+class Options(unittest.TestCase):
+    def test_outlines_is_a_preview_diagnostic_only(self):
+        self.assertEqual(build.options(["a", "b"]), (Path("a"), Path("b"), None, None, False))
+        self.assertEqual(build.options(["a", "b", "--preview", "p", "--outlines", "--photo", "f"]),
+                         (Path("a"), Path("b"), Path("p"), Path("f"), True))
+        for wrong in (["a", "b", "--outlines"], ["a", "b", "--preview"], ["a"], ["a", "b", "--x"]):
+            with self.subTest(wrong=wrong), self.assertRaises(SystemExit):
+                build.options(wrong)
+
+
 class Xml(unittest.TestCase):
     def test_edits_fords_xml_and_reads_it_back_for_the_build_and_the_preview(self):
         for preview in (False, True):

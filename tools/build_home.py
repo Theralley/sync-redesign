@@ -1,6 +1,6 @@
 """Build the Home screen as an aligned 2x2 grid of cards with our headings (phase R7 v2).
 
-Usage: python3 tools/build_home.py CAR_APPS_FOLDER OUT_FOLDER [--preview DIR]
+Usage: python3 tools/build_home.py CAR_APPS_FOLDER OUT_FOLDER [--preview DIR [--photo FILE] [--outlines]]
 
 Takes **your car's own** Sync/Apps folder (from the drive log, in ~/.s2am) and writes, at their
 Apps-relative paths under OUT_FOLDER: Home/Home.swf, and through build_corners.py the four
@@ -38,7 +38,10 @@ size alone.
 (a connected phone, FM with six presets, no route, two seat heaters) composed where Home moves
 them, the frame's bars plain black, in three pictures (the run-time chip colour, lighter chips,
 sample temperatures), beside a photo if one is given with --photo FILE, and prints the measured
-screen positions. Ford's artwork: keep OUT_FOLDER and DIR private.
+screen positions. The theme draws no button outline in the car (frame v2 sets the theme's
+LINE_ALPHA to 0), so the pictures show none; --outlines adds a diagnostic overlay, labelled as
+such, of where SyncThemeButtonArt.DrawIt would draw one, each checked against its fill. Ford's
+artwork: keep OUT_FOLDER and DIR private.
 """
 from __future__ import annotations
 
@@ -270,6 +273,7 @@ def check(original: bytes, result: bytes) -> list[tuple]:
 
 # ------------------------------------------------------------------ the preview
 PICTURES = {"": "home.png", "22": "home-chips22.png", "temps": "home-temps.png"}
+OUTLINE = (255, 64, 160)  # the --outlines diagnostic overlay: a colour nothing in the picture has
 # content blocks measured per quadrant: label -> quadrant-local box (x0, y0, x1, y1[, x split])
 BLOCKS = {
     "phone": {"icons": (0, 0, 400, 48), "text": (0, 60, 400, 112), "chip": (0, 112, 400, 175)},
@@ -322,6 +326,27 @@ def measure_home(home: Image.Image) -> list[str]:
     return lines
 
 
+def outlines(image: Image.Image, chip: tuple[int, int, int]) -> list[str]:
+    """The --outlines diagnostic: where SyncThemeButtonArt.DrawIt would draw each theme button's
+    1 px outline (the button's base box at its DayNight clip's origin, Ford's placement = the
+    fill's origin, corners r=3 where the shape type rounds them), drawn in the overlay colour
+    and measured against the fill. The car draws none while the theme's line alpha is 0."""
+    draw = ImageDraw.Draw(image)
+    lines = []
+    px = image.load()
+    for key, name in QUADRANT.items():
+        ox, oy = OURS[key]
+        for x, y, w, h, corners in build_corners.chip_boxes(name):
+            x0, y0, x1, y1 = round(ox + x), round(oy + y), round(ox + x + w) - 1, round(oy + y + h) - 1
+            fill = [(i, j) for j in range(y0 - 3, y1 + 4) for i in range(x0 - 3, x1 + 4)
+                    if max(abs(a - b) for a, b in zip(px[i, j][:3], chip)) <= 2]
+            box = (min(i for i, _ in fill), min(j for _, j in fill), max(i for i, _ in fill), max(j for _, j in fill)) if fill else None
+            draw.rounded_rectangle((x0, y0, x1, y1), radius=3, outline=(*OUTLINE, 255), width=1, corners=tuple(bool(c) for c in corners))
+            lines.append(f"{key} outline x {x0}-{x1 + 1} y {y0}-{y1 + 1}: fill measured {box and (box[0], box[2] + 1, box[1], box[3] + 1)}"
+                         f" -> {'on the fill' if box == (x0, y0, x1, y1) else 'OFF THE FILL'}")
+    return lines
+
+
 def measure_corner(key: str, corner: Image.Image, blocks: dict | None = None, note: str = "") -> list[str]:
     ox, oy = OURS[key]
     alpha = corner.getchannel("A")
@@ -341,7 +366,8 @@ def measure_corner(key: str, corner: Image.Image, blocks: dict | None = None, no
     return lines
 
 
-def preview(home_preview: bytes, corners: dict[str, bytes], folder: Path, work: Path, photo: Path | None) -> list[str]:
+def preview(home_preview: bytes, corners: dict[str, bytes], folder: Path, work: Path, photo: Path | None,
+            overlay: bool = False) -> list[str]:
     """Home-preview with the quadrant files' idle variants composed where Home moves them."""
     folder.mkdir(parents=True, exist_ok=True)
     swfs = {"home": home_preview}
@@ -362,12 +388,17 @@ def preview(home_preview: bytes, corners: dict[str, bytes], folder: Path, work: 
                 report += measure_corner(key, corner)
             elif key in VARIANT_BLOCKS.get(variant, {}):
                 report += measure_corner(key, corner, VARIANT_BLOCKS[variant][key], f" ({variant} variant)")
+        if overlay:
+            drawn = outlines(image, build_corners.VARIANTS[variant][0])
+            if variant == "":
+                report += drawn
         draw = ImageDraw.Draw(image)
         for top, bottom in ((0, 48), (432, 480)):
             draw.rectangle((0, top, 799, bottom - 1), fill=(0, 0, 0, 255))
         note = {"": "chips (13,14,18); temperature fields empty as in the car", "22": "chips (22,24,30)",
                 "temps": "chips (13,14,18); sample temperatures shown"}[variant]
-        draw.text((8, 18), "frame: title bar (AppConsole, not Home.swf)", fill=(60, 60, 60, 255))
+        draw.text((8, 18), "frame: title bar (AppConsole, not Home.swf)" + ("   DIAGNOSTIC OVERLAY: where DrawIt would draw a button outline (the car draws none, line alpha 0)" if overlay else ""),
+                  fill=(*OUTLINE, 255) if overlay else (60, 60, 60, 255))
         draw.text((8, 452), "frame: bottom bar (AppConsole, not Home.swf)   " + note, fill=(60, 60, 60, 255))
         pictures[variant] = image.convert("RGB")
         pictures[variant].save(folder / filename)
@@ -387,9 +418,11 @@ def preview(home_preview: bytes, corners: dict[str, bytes], folder: Path, work: 
 
 
 # ------------------------------------------------------------------ the command line
-def options(argv: list[str]) -> tuple[Path, Path, Path | None, Path | None]:
+def options(argv: list[str]) -> tuple[Path, Path, Path | None, Path | None, bool]:
     folder = photo = None
     args, i = [], 0
+    overlay = "--outlines" in argv
+    argv = [a for a in argv if a != "--outlines"]
     while i < len(argv):
         if argv[i] in ("--preview", "--photo"):
             if i + 1 == len(argv) or argv[i + 1].startswith("--"):
@@ -404,13 +437,13 @@ def options(argv: list[str]) -> tuple[Path, Path, Path | None, Path | None]:
             raise SystemExit(__doc__)
         args.append(argv[i])
         i += 1
-    if len(args) != 2:
+    if len(args) != 2 or (overlay and folder is None):
         raise SystemExit(__doc__)
-    return Path(args[0]), Path(args[1]), folder, photo
+    return Path(args[0]), Path(args[1]), folder, photo, overlay
 
 
 def main(argv: list[str]) -> None:
-    source, target, folder, photo = options(argv)
+    source, target, folder, photo, overlay = options(argv)
     original = (source / HOME).read_bytes()
     face = glyphs.Face()
     with tempfile.TemporaryDirectory() as temp:
@@ -424,7 +457,7 @@ def main(argv: list[str]) -> None:
         corners = build_corners.build_all(source, target, work / "corners")
         if folder:
             home_preview = build(original, face, work / "home-preview", preview=True)
-            print("\n".join(preview(home_preview, corners, folder, work / "preview", photo)))
+            print("\n".join(preview(home_preview, corners, folder, work / "preview", photo, overlay)))
             print(f"previews in {folder}")
 
 
