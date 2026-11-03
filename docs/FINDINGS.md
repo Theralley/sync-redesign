@@ -130,7 +130,7 @@ can at worst fail when opened; a changed main screen is read at every start.
   reads it as opacity, so our 76 button strips and four corner bars drew transparent: black
   buttons with only an outline, and the theme's glow showing through on Climate. Ford's code
   does not tint the frame: no colour transform, blend or filter reaches it (the theme's
-  colouring touches dialogs and indicator glows only). Fixed (47ad11d).
+  colouring touches dialogs and indicator glows only). Fixed (9872d67).
 - `bundle-8d9d` ran at 07:39; every part verified byte for byte (Settings > Display with the
   Auto dim offset from -10, Ford's frame back, the fixed frame). SyncExtPack restarts SYNC after
   an install, so the photos from 07:42 show the fixed frame: the buttons and bars are solid.
