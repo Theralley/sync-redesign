@@ -3,6 +3,44 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
+## Sjunde turen: version 2 lagad (förberett 2026-11-03)
+
+Sjätte turens tre fel, lagade:
+
+- **Förinställningarnas ramar:** vi hade nollat storleken på klippet som temat ritar ramen i,
+  men temat sätter tillbaka storleken när det ritar, så ramarna hamnade en rad för högt. Nu får
+  klippen Fords egen placering igen, och ramen hamnar exakt på knappen (även Stör inte).
+- **Inga knappkanter alls:** temats tunna kant runt varje knapp ritas nu helt genomskinlig, en
+  enda siffra i ramens kod (100 till 0). Knapparna på klimat-, radio- och telefonskärmarna blir
+  platta. Samma siffra styr också kanten på en avstängd knapp och röststyrningens markering av
+  knappar man kan säga: de syns inte heller längre.
+- **Den lösa "Klimat":** klimatetiketten hänger nedtill på skärmen, så när vi flyttade den 100
+  px upp hamnade den i klimatkortet. Nu står den 600 px upp, långt ovanför skärmen.
+
+Fyra filer ändras (ramen, klimatetiketten, mediahörnet och telefonhörnet), alla läses när SYNC
+startar. Temat är oförändrat. Telefonens egen meny (glansiga bilder i Phone.swf) kommer senare.
+
+- **SYNC-stickan:** `bundle-b2a0`: de fyra filerna först tillbaka till Fords, sedan lagade
+  (8 delar).
+- **UNTITLED 2:** `bundle-de93`: alla 14 filerna och färgerna tillbaka till Fords (15 delar).
+  Dimningen, Apps-rutorna och samtalshistoriken ligger kvar.
+- Generalrepeterat på en simulerad SYNC i bilens läge efter sjätte turen: på och av byte för
+  byte, och även sjätte turens ångra (`bundle-6088`) tar bilen tillbaka till Fords efter detta.
+  Ramen skiljer sig från bilens nuvarande i exakt en byte. Codex har granskat ändringarna: fynden
+  gällde verktygens kontroller, inte filerna till bilen. Båda stickorna skrivna, lästa tillbaka
+  efter ommontering, märkta och utmatade.
+
+I bilen:
+
+1. Parkerad, motorn igång. Stoppa i SYNC-stickan och vänta: "Install successfully completed",
+   sedan startar SYNC om.
+2. **Foto** av Hem (nära på mediakortet och klimatkortet), klimatskärmen, radion och telefonen.
+3. Hem: sitter förinställningarnas ramar på knapparna nu, eller syns inga kanter alls? Är den
+   lösa "Klimat" borta? Tryck på en förinställd station och Stör inte.
+4. Prova som förut: samtal in och ut, klimatet (**MAX DEFROST**), **backen och kameran**,
+   röstknappen.
+5. Ser något fel ut: UNTITLED 2. Ta med fotona och båda stickorna till Macen.
+
 ## Sjätte turen: version 2, ram och Hem på ett rutnät (förberett 2026-11-03)
 
 Femte turen såg fortfarande ut som det gamla systemet med nya färger, och korten på Hem satt
