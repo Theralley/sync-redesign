@@ -76,6 +76,24 @@ class Art(unittest.TestCase):
         self.assertEqual(art.strip(4, 32, "AVAILABLE").getpixel((0, 0))[:3], (38, 42, 51))
         self.assertIn(b'dayColor="0x262A33" nightColor="0x262A33"', make_theme.theme_xml(xml, True))
 
+    def test_the_v2_palette_has_black_bars_lighter_strips_and_the_outline_to_match(self):
+        import make_theme
+        xml = (b'<AppTypes>\n<AppType btnColor="0x777777" dialogColor="0x777777" dayColor="0x666666" nightColor="0x393939" />\n'
+               + b''.join(b'<AppType btnColor="0x111111" dialogColor="0x111111" dayColor="0x666666" nightColor="0x393939" />\n'
+                          for _ in range(4)))
+        try:
+            art.use("v2")
+            self.assertEqual(art.strip(4, 32, "AVAILABLE").getpixel((0, 0))[:3], (22, 24, 30))
+            self.assertEqual(art.strip(4, 32, "PRESSED").getpixel((0, 0))[:3], (34, 37, 45))
+            self.assertEqual(art.strip(4, 42, "SELECTED", 0).getpixel((0, 20))[:3], art.mix((22, 24, 30), art.ACCENTS[0], art.TINT))
+            self.assertEqual((art.BAR, art.BAR_PRESSED, art.CARD), ((0, 0, 0), (0, 0, 0), (10, 11, 14)))
+            self.assertEqual(art.straight((90, 59), True, (11, 59), line=True).getpixel((5, 30))[:3], (0, 0, 0))
+            self.assertIn(b'dayColor="0x16181E" nightColor="0x16181E"', make_theme.theme_xml(xml, True, "v2"))
+        finally:
+            art.use("night")
+        self.assertEqual(art.PALETTES["deep"]["BUTTON"], (13, 14, 18))  # deep is not changed by v2
+        self.assertTrue(all("CARD" in p and "CARD_PRESSED" in p for p in art.PALETTES.values()))
+
     def test_a_straight_piece_is_flat_inside_the_bar_and_clear_outside(self):
         bottom = art.straight((90, 59), False, (restyle_frame.OVERHANG, 59), ("home", 45, 32.5, 26))
         self.assertEqual(bottom.size, (90, 59))

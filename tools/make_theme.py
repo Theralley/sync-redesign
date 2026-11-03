@@ -1,14 +1,14 @@
 """Make the "Night" colour theme (plan phase R1) from the car's own theme files.
 
-Usage: python3 tools/make_theme.py CAR_THEMES_FOLDER OUTFOLDER [--borderless [--palette night|deep]] [--no-glow]
+Usage: python3 tools/make_theme.py CAR_THEMES_FOLDER OUTFOLDER [--borderless [--palette night|deep|v2]] [--no-glow]
 CAR_THEMES_FOLDER is the drive log's copy of \\8inchSkins\\Ford\\Sync\\Themes (in ~/.s2am).
 
 Writes Theme.XML and yellow/green/red/blue.bmp for `s2am job theme --from OUTFOLDER`:
 - Theme.XML: the car's own file with only the four areas' button and dialog colours changed;
   with --borderless also the outline SYNC draws round every button (System's dayColor and
   nightColor, which SyncThemeButtonArt uses), set to the restyled button's own colour in the
-  frame's palette (restyle_art.PALETTES, "night" unless --palette), so the flat buttons of
-  phase R4a stand on the black without a frame.
+  frame's palette (restyle_art.PALETTES, "night" unless --palette; "v2" is frame v2's, outline
+  0x16181E), so the flat buttons of phase R4a stand on the black without a frame.
 - The gradients: a thinner, calmer glow in the new accent colours, drawn into exactly the
   original format (the car's own 70-byte header, 800x240, 16-bit RGB565, bottom-up), so
   every file keeps its size. With --no-glow they are black: SYNC draws them under an area's

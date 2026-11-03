@@ -1,6 +1,6 @@
 """Restyle SYNC's frame: every button, the bars round the screen and their icons (plan phase R4).
 
-Usage: python3 tools/restyle_frame.py CAR_APPCONSOLE_SWF OUT_SWF [--palette night|deep] [--straight]
+Usage: python3 tools/restyle_frame.py CAR_APPCONSOLE_SWF OUT_SWF [--palette night|deep|v2] [--straight]
                                      [--radius N] [--preview FOLDER]
 
 Takes **your car's own** Apps\\AppConsole\\AppConsole.swf (from the drive log, in ~/.s2am). It
@@ -25,7 +25,8 @@ car's file: only the named pictures (and, with --radius, that one class) may dif
 that is not the frame this was made for (other pictures or sizes) is refused. --preview FOLDER
 gets Ford's pictures and ours side by side (Ford's artwork: keep it private). --palette picks
 restyle_art's colours: "night" (the default, R4a) or "deep", near black, for the car's screen,
-which shows dark greys far lighter than their numbers. --straight drops the slant of the pieces
+which shows dark greys far lighter than their numbers, or "v2" (build_frame.py's: black bars,
+lighter strips). --straight drops the slant of the pieces
 between the bars (the clock at the top; Info, Home and Settings at the bottom): the parts that
 hang outside the bars turn transparent and the bars run straight across the screen; the
 selected piece gets a line along its top. The touch areas stay as they are: SYNC uses each

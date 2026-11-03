@@ -1,23 +1,28 @@
-"""Build the Home screen as four cards with accent stripes (plan phase R7).
+"""Build the Home screen as an aligned 2x2 grid of cards with our headings (phase R7 v2).
 
-Usage: python3 tools/build_home.py CAR_HOME_SWF OUT_SWF [--preview FOLDER]
+Usage: python3 tools/build_home.py CAR_APPS_FOLDER OUT_FOLDER [--preview DIR]
 
-Takes **your car's own** Home\\Home.swf (from the drive log, in ~/.s2am). Home.swf is a start-up
-file, and only a frame: the four quadrants (phone, navigation, media, climate) are separate
-files that Home loads and moves into place once all four have arrived. What Home draws itself
-is a half-transparent black filter over the wallpaper and two gradient divider lines. This
-turns that into the cards of the sketch; nothing is recompiled:
+Takes **your car's own** Sync/Apps folder (from the drive log, in ~/.s2am) and writes, at their
+Apps-relative paths under OUT_FOLDER: Home/Home.swf, and through build_corners.py the four
+quadrant files Phone/PhoneSmartCorner.swf, Nav/NavSmartCorner.swf, Media/MediaSmartCorner.swf,
+Climate/ClimateSmartCorner.swf. Home.swf is a start-up file and only a frame: it shows the
+wallpaper under a half-transparent black filter and two gradient divider lines, loads the four
+quadrant files and moves them into place. This makes it the grid of version 2; nothing is
+recompiled, no tag is added or removed:
 
-- through FFDec's XML form of the file (the pinned copy, in Docker, no network): the two
-  divider shapes (54 and 56) are redrawn as four accent stripes and four rounded card bodies
-  over them; their two placements inside mcSmartCorners (sprite 63) are moved so the shapes
-  draw in screen coordinates, and no longer in Ford's "screen" blend mode; the sprite's own
-  placement loses its 0.9989 y-scale; and the filter (shape 52) becomes opaque black, so the
-  gaps between the cards do not depend on the wallpaper the owner picked;
+- through FFDec's XML form (the pinned copy, in Docker, no network): the vertical divider
+  (shape 54) becomes the four card bodies, rounded rectangles of CARD on the grid x 8-396 and
+  404-792, y 56-236 and 244-424 (8 px margins and gaps); the horizontal divider (shape 56)
+  becomes the four headings, a 16 px area icon and the area's name ("Telefon", "Navigation",
+  "Media", "Klimat") in the area colour, 18 px, as plain vector art set in DM Sans (fonts/, OFL)
+  through glyphs.py: no font tag, no device font; their two placements inside mcSmartCorners
+  are moved so the shapes draw in screen coordinates and lose Ford's "screen" blend mode; the
+  sprite's own placement loses its 0.9989 y-scale; and the filter (shape 52) becomes opaque
+  black, so the wallpaper never shows;
 - in place, same length, in the class Home: the eight numbers of SC_TOP_LEFT, SC_TOP_RIGHT,
-  SC_BTM_RIGHT and SC_BTM_LEFT, where Home moves the four quadrant files, so each lands inside
-  its card. Seven are integers; one (SC_BTM_LEFT's x, 0) the compiler stored as a double, which
-  ActionScript 2 writes with the two 32-bit halves of the number swapped.
+  SC_BTM_RIGHT and SC_BTM_LEFT, where Home moves the four quadrant files (OURS). Seven are
+  integers; one (SC_BTM_LEFT's x, 0) the compiler stored as a double, which ActionScript 2
+  writes with the two 32-bit halves of the number swapped.
 
 FFDec's round trip is not byte for byte (it re-encodes a gradient shape it was not asked to
 touch), so only the tags named above are taken from its output; every other tag is the car's
@@ -25,740 +30,375 @@ own. The result is checked tag by tag against the car's file: only the three sha
 (and inside it only the two divider placements), its placement on the main timeline and the
 class Home may differ, the class only in the eight numbers; and every shape, matrix, colour and
 number must read back as written. A file that is not the Home screen this was made for (other
-dividers, another filter, other corner numbers) is refused.
+dividers, another filter, other corner numbers) is refused, and so is any output as long as
+the car's file: s2am refuses such a start-up file, and the car's import checks a copy by its
+size alone.
 
---preview FOLDER renders Ford's Home and ours with FFDec, side by side, and, when the four
-quadrant files lie beside Home.swf as in the drive log (Apps/Phone/PhoneSmartCorner.swf and so
-on), puts them on both pictures in an idle state. Ford's artwork: keep FOLDER private.
-
-The cards take the deep palette's bar colour on black, the stripes the four area colours
-(restyle_art.ACCENTS). They are fitted to what the quadrant files draw today, so nothing inside
-those files has to move yet, and each quadrant's full-size invisible touch button stays at or
-below y=48, under the frame's title bar, as Ford had it.
+--preview DIR renders the result with FFDec: Home with the four quadrant files in an idle state
+(a connected phone, FM with six presets, no route, two seat heaters) composed where Home moves
+them, the frame's bars plain black, in three pictures (the run-time chip colour, lighter chips,
+sample temperatures), beside a photo if one is given with --photo FILE, and prints the measured
+screen positions. Ford's artwork: keep OUT_FOLDER and DIR private.
 """
 from __future__ import annotations
 
 import hashlib
-import re
 import struct
 import sys
 import tempfile
-import xml.etree.ElementTree as ElementTree
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw
 
-import restyle_art as art
+import build_corners
+import glyphs
 import swf_bitmaps
-from build_apps_menu import run_ffdec, tags as every_tag
-from build_phone_history import class_actions
+import xmlswf as X
 
+HOME = "Home/Home.swf"
 CLASS = "__Packages.Home"
-BACKGROUND = art.PALETTES["deep"]["BACKGROUND"]  # the gaps between the cards: Ford's filter, now opaque
-CARD = art.PALETTES["deep"]["BAR"]
-ACCENT = {"phone": art.ACCENTS[1], "nav": art.ACCENTS[2], "media": art.ACCENTS[3], "climate": art.ACCENTS[4]}
-RADIUS, STRIPE = 10, 6  # px: the cards' corners, and how much of each stripe shows at the card's left
-# Screen pixels. The cards (x, y, width, height), each sized to what its quadrant file draws in its
-# idle state (phone y 49..165, nav 30..170, media 28..165, climate 34..160 of their 400x240).
-CARDS = {"phone": (10, 56, 385, 158), "media": (10, 224, 385, 200),
-         "nav": (405, 56, 385, 174), "climate": (405, 240, 385, 184)}
-# Where Home moves each quadrant file: (Ford's, ours), by the constant in the class Home
-CORNERS = {"SC_TOP_LEFT": ("phone", (10, 40), (3, 39)), "SC_TOP_RIGHT": ("nav", (400, 40), (398, 48)),
-           "SC_BTM_RIGHT": ("climate", (400, 235), (398, 242)), "SC_BTM_LEFT": ("media", (0, 245), (2, 232))}
-FILTER, STRIPES, BODIES, SMART = 52, 54, 56, 63  # the three shapes, and the sprite mcSmartCorners
-DIVIDERS = (55, 57)  # the two placements inside it: the clips that hold shapes 54 and 56
-SMART_PLACED = (8040, 4800)  # twips: where the main timeline puts mcSmartCorners (Home.init forces _x = 400)
-SMART_AT = (400, 240)  # px: where it sits at run time, so the shapes inside are drawn from minus this
+BACKGROUND = (0, 0, 0)  # the gaps between the cards: Ford's filter, now opaque
+CARD = (10, 11, 14)
+ACCENT = {"phone": (214, 160, 72), "nav": (72, 190, 150), "media": (220, 76, 84), "climate": (64, 150, 255)}
+NAME = {"phone": "Telefon", "nav": "Navigation", "media": "Media", "climate": "Klimat"}
+RADIUS = 12
+# The grid (screen px): columns x 8-396 and 404-792, rows y 56-236 and 244-424; (x, y, w, h)
+CARDS = {"phone": (8, 56, 388, 180), "nav": (404, 56, 388, 180),
+         "media": (8, 244, 388, 180), "climate": (404, 244, 388, 180)}
+HEADING_SIZE, HEADING_TOP, HEADING_X, ICON = 18, 12, 16, 16  # px: type size, offsets from the card's corner, icon box
+# Where Home moves each quadrant file (SC_* in the class Home): Ford's and ours, screen px. Ours
+# are chosen so each quadrant's content sits centred in its card below the heading (build_corners
+# lays the content out for exactly these origins) and each quadrant's full-size invisible touch
+# button stays at or below y=48, under the frame's title bar: the phone's button starts at +9,+9
+# (44+9=53), nav's at +0 (48), media's at +0 (236; it reaches under the bottom bar as Ford's did),
+# climate's at +9,+0 (236).
+FORD = {"phone": (10, 40), "nav": (400, 40), "climate": (400, 235), "media": (0, 245)}
+OURS = {"phone": (2, 44), "nav": (398, 48), "climate": (400, 236), "media": (2, 236)}
+SLOT = {"SC_TOP_LEFT": "phone", "SC_TOP_RIGHT": "nav", "SC_BTM_RIGHT": "climate", "SC_BTM_LEFT": "media"}
+BODIES, HEADINGS, FILTER, SMART = 54, 56, 52, 63  # the three shapes, and the sprite mcSmartCorners
+DIVIDERS = {1: 55, 3: 57}  # the two placements inside it: depth -> the clip holding shape 54 / 56
+SMART_PLACED = (402, 240)  # px: where the main timeline puts mcSmartCorners
+SMART_AT = (400, 240)  # px: where it sits at run time (Home.init forces _x = 400)
 LABELS = (59, 60, 61, 62)  # its design-time labels, hidden at run time; blanked for the preview only
-PLACE2, PLACE3, SHAPE, SHAPE3, SPRITE, EDIT_TEXT = 26, 70, 2, 32, 39, 37  # tag codes
-TWIP = 20
+ALLOWED = {("DefineShape", BODIES), ("DefineShape", HEADINGS), ("DefineShape3", FILTER), ("DoInitAction", 67),
+           ("main", "PlaceObject2", 6, "mcSmartCorners"), (f"sprite{SMART}", "PlaceObject3", 1, ""),
+           (f"sprite{SMART}", "PlaceObject3", 3, "")}
 
 
-# ------------------------------------------------------------------ the shapes, in FFDec's XML form
-def bits(*values: int) -> int:
-    """The signed bit count FFDec's XML wants for these values."""
-    return max(2, max(abs(v) for v in values).bit_length() + 1)
+# ------------------------------------------------------------------ the art
+def icon_paths(name: str, x: float, y: float) -> list[tuple]:
+    """A 16 px area icon with its box at (x, y): simple filled geometry, holes in CARD."""
+    a, c = ACCENT[name], CARD
+    if name == "phone":  # a phone: a rounded ring with a short bar at the bottom
+        return [(a, X.rounded_rect(x + 3.5, y + 0.5, 9, 15, 2.5)), (c, X.rounded_rect(x + 5, y + 2, 6, 10.5, 1.2)),
+                (c, X.rounded_rect(x + 6.5, y + 13.1, 3, 1.2, 0.5))]
+    if name == "nav":  # a navigation arrow
+        return [(a, X.polygon([(x + 8, y + 0.5), (x + 15, y + 15), (x + 8, y + 11.6), (x + 1, y + 15)]))]
+    if name == "media":  # a note: head, stem, flag
+        return [(a, X.circle(x + 5.2, y + 12.2, 3.6)), (a, X.polygon([(x + 7.3, y + 1), (x + 9, y + 1), (x + 9, y + 12), (x + 7.3, y + 12)])),
+                (a, X.polygon([(x + 7.3, y + 1), (x + 14.5, y + 3.4), (x + 14.5, y + 7.2), (x + 9, y + 5.2)]))]
+    if name == "climate":  # a thermometer
+        return [(a, X.rounded_rect(x + 4.5, y + 0.5, 7, 11.5, 3.5)), (c, X.rounded_rect(x + 6.2, y + 2.2, 3.6, 8.3, 1.8)),
+                (a, X.circle(x + 8, y + 12.3, 3.6)), (a, X.polygon([(x + 7.2, y + 5.5), (x + 8.8, y + 5.5), (x + 8.8, y + 11), (x + 7.2, y + 11)]))]
+    raise ValueError(name)
 
 
-def rounded_rect(x: int, y: int, w: int, h: int, r: int) -> list[tuple]:
-    """Edge records in twips of a rounded rectangle, clockwise on screen from (x + r, y)."""
-    x, y, w, h, r = x * TWIP, y * TWIP, w * TWIP, h * TWIP, r * TWIP
-    return [("move", x + r, y),
-            ("line", w - 2 * r, 0), ("curve", r, 0, 0, r),
-            ("line", 0, h - 2 * r), ("curve", 0, r, -r, 0),
-            ("line", -(w - 2 * r), 0), ("curve", -r, 0, 0, -r),
-            ("line", 0, -(h - 2 * r)), ("curve", 0, -r, r, 0)]
+def body_paths() -> list[tuple]:
+    return [(CARD, X.rounded_rect(x, y, w, h, RADIUS)) for x, y, w, h in CARDS.values()]
 
 
-def card_paths() -> tuple[list, list]:
-    """The stripes (drawn first) and the card bodies over them, each (colour, edges)."""
-    stripes, bodies = [], []
-    for name, (x, y, w, h) in CARDS.items():
-        stripes.append((ACCENT[name], rounded_rect(x, y, 2 * RADIUS + STRIPE, h, RADIUS)))
-        bodies.append((CARD, rounded_rect(x + STRIPE, y, w - STRIPE, h, RADIUS)))
-    return stripes, bodies
-
-
-def shape_xml(tag: ElementTree.Element, paths: list[tuple[tuple[int, int, int], list[tuple]]]) -> None:
-    """Rewrite a DefineShape's styles, records and bounds: one solid colour fill per path."""
-    shapes = tag.find("shapes")
-    fills = shapes.find("fillStyles").find("fillStyles")
-    for child in list(fills):
-        fills.remove(child)
-    for colour, _ in paths:
-        item = ElementTree.SubElement(fills, "item", {"type": "FILLSTYLE", "fillStyleType": "0"})
-        ElementTree.SubElement(item, "color", {"type": "RGB", "red": str(colour[0]), "green": str(colour[1]),
-                                               "blue": str(colour[2])})
-    shapes.set("numFillBits", str(len(paths).bit_length()))
-    shapes.set("numLineBits", "0")
-    lines = shapes.find("lineStyles").find("lineStyles")
-    for child in list(lines):
-        lines.remove(child)
-    records = shapes.find("shapeRecords")
-    for child in list(records):
-        records.remove(child)
-    xs, ys = [], []
-    for index, (_, edges) in enumerate(paths, start=1):
-        px = py = 0
-        for edge in edges:
-            if edge[0] == "move":
-                px, py = edge[1], edge[2]
-                ElementTree.SubElement(records, "item", {
-                    "type": "StyleChangeRecord", "stateMoveTo": "true", "moveBits": str(bits(px, py)),
-                    "moveDeltaX": str(px), "moveDeltaY": str(py), "stateFillStyle0": "false",
-                    "stateFillStyle1": "true", "fillStyle1": str(index), "stateLineStyle": "false",
-                    "stateNewStyles": "false"})
-            elif edge[0] == "line":
-                dx, dy = edge[1], edge[2]
-                attrs = {"type": "StraightEdgeRecord", "numBits": str(bits(dx, dy)),
-                         "generalLineFlag": str(bool(dx and dy)).lower()}
-                if dx and dy:
-                    attrs.update(deltaX=str(dx), deltaY=str(dy))
-                elif dx:
-                    attrs.update(vertLineFlag="false", deltaX=str(dx))
-                else:
-                    attrs.update(vertLineFlag="true", deltaY=str(dy))
-                ElementTree.SubElement(records, "item", attrs)
-                px, py = px + dx, py + dy
-            else:
-                cx, cy, ax, ay = edge[1:]
-                ElementTree.SubElement(records, "item", {
-                    "type": "CurvedEdgeRecord", "numBits": str(bits(cx, cy, ax, ay)), "controlDeltaX": str(cx),
-                    "controlDeltaY": str(cy), "anchorDeltaX": str(ax), "anchorDeltaY": str(ay)})
-                px, py = px + cx + ax, py + cy + ay
-            xs.append(px)
-            ys.append(py)
-    ElementTree.SubElement(records, "item", {"type": "EndShapeRecord", "endOfShape": "0"})
-    bounds = tag.find("shapeBounds")
-    for key, value in (("Xmin", min(xs)), ("Xmax", max(xs)), ("Ymin", min(ys)), ("Ymax", max(ys))):
-        bounds.set(key, str(value))
-    bounds.set("nbits", str(bits(min(xs), max(xs), min(ys), max(ys))))
-
-
-STATE = ("stateMoveTo", "stateFillStyle0", "stateFillStyle1", "stateLineStyle", "stateNewStyles",
-         "fillStyle0", "fillStyle1", "lineStyle", "moveDeltaX", "moveDeltaY")
-
-
-def read_shape(tag: ElementTree.Element) -> list[tuple]:
-    """Everything that decides what a shape is, as plain tuples: its bounds, bit counts, fills, line
-    styles and every record with all its flags, to compare what was read back with what was written."""
-    shapes = tag.find("shapes")
-    bounds = tag.find("shapeBounds")
-    out = [("bounds", *(bounds.get(k) for k in ("Xmin", "Xmax", "Ymin", "Ymax", "nbits"))),
-           ("bits", shapes.get("numFillBits"), shapes.get("numLineBits")),
-           ("lines", len(shapes.find("lineStyles").find("lineStyles")))]
-    for fill in shapes.find("fillStyles").find("fillStyles"):
-        colour = fill.find("color")
-        out.append(("fill", fill.get("fillStyleType"), None if colour is None else
-                    tuple(colour.get(k) for k in ("red", "green", "blue", "alpha"))))
-    for record in shapes.find("shapeRecords"):
-        kind = record.get("type")
-        if kind == "StyleChangeRecord":
-            out.append(("change", *(record.get(k) for k in STATE)))
-        elif kind == "StraightEdgeRecord":
-            out.append(("line", record.get("deltaX", "0"), record.get("deltaY", "0"),
-                        record.get("generalLineFlag"), record.get("vertLineFlag")))
-        elif kind == "CurvedEdgeRecord":
-            out.append(("curve", record.get("controlDeltaX"), record.get("controlDeltaY"),
-                        record.get("anchorDeltaX"), record.get("anchorDeltaY")))
-        else:
-            out.append((kind,))
+def heading_paths(face: glyphs.Face) -> list[tuple]:
+    """Icon and name for each card at the card's top-left; the icon box is centred on the type's
+    cap height so icon and letters sit on one visual line."""
+    out = []
+    cap = face.cap_height * HEADING_SIZE
+    for name, (x, y, _, _) in CARDS.items():
+        baseline = y + HEADING_TOP + cap + 1  # 1 px of air above the cap height
+        icon_top = baseline - cap / 2 - ICON / 2 - 0.5
+        out += icon_paths(name, x + HEADING_X, icon_top)
+        for contour in face.edges(NAME[name], x + HEADING_X + ICON + 8, baseline, HEADING_SIZE):
+            out.append((ACCENT[name], contour))
     return out
 
 
-# ------------------------------------------------------------------ finding things in FFDec's XML
-def find(root: ElementTree.Element, kind: str, ident: int) -> ElementTree.Element | None:
-    """The Define tag of one XML type (DefineShapeTag, DefineSpriteTag, ...) with this character id."""
-    attr = {"DefineShapeTag": "shapeId", "DefineShape3Tag": "shapeId", "DefineSpriteTag": "spriteId",
-            "DefineEditTextTag": "characterID"}[kind]
-    return next((tag for tag in root.find("tags") if tag.get("type") == kind and tag.get(attr) == str(ident)), None)
+# ------------------------------------------------------------------ the XML edits
+def filter_colour(root: ET.Element) -> ET.Element:
+    return X.define(root, "DefineShape3Tag", FILTER).find("shapes").find("fillStyles").find("fillStyles")[0].find("color")
 
 
-def define(root: ElementTree.Element, kind: str, ident: int) -> ElementTree.Element:
-    """The same, for Home.swf: a missing tag means another file."""
-    tag = find(root, kind, ident)
-    if tag is None:
-        raise SystemExit(f"no {kind} {ident}: this is not the Home screen this tool was made for")
-    return tag
-
-
-def container(root: ElementTree.Element, which: str) -> ElementTree.Element | None:
-    """The placements of the main timeline ("main") or of a sprite, by its id; None without that sprite."""
-    if which == "main":
-        return root.find("tags")
-    sprite = find(root, "DefineSpriteTag", int(which))
-    return None if sprite is None else sprite.find("subTags")
-
-
-def placements(items: ElementTree.Element, character: int) -> list[ElementTree.Element]:
-    """Every PlaceObject2 or PlaceObject3 in items that places this character."""
-    return [item for item in items if item.get("type") in ("PlaceObject2Tag", "PlaceObject3Tag")
-            and item.get("characterId") == str(character)]
-
-
-def set_translate(place: ElementTree.Element, x: int, y: int) -> None:
-    """A placement's matrix: a plain move by (x, y) twips, no scale, no rotation."""
-    matrix = place.find("matrix")
-    for key in ("scaleX", "scaleY", "rotateSkew0", "rotateSkew1", "nScaleBits", "nRotateBits"):
-        matrix.attrib.pop(key, None)
-    matrix.set("hasScale", "false")
-    matrix.set("hasRotate", "false")
-    matrix.set("nTranslateBits", str(bits(x, y)))
-    matrix.set("translateX", str(x))
-    matrix.set("translateY", str(y))
-
-
-def filter_colour(root: ElementTree.Element) -> ElementTree.Element:
-    return define(root, "DefineShape3Tag", FILTER).find("shapes").find("fillStyles").find("fillStyles")[0].find("color")
-
-
-def smart(root: ElementTree.Element) -> ElementTree.Element:
-    """The placements inside mcSmartCorners."""
-    return define(root, "DefineSpriteTag", SMART).find("subTags")
-
-
-def check_ford(root: ElementTree.Element) -> None:
-    """The file is the Home screen this was made for: Ford's two dividers (0.75 x 348 and 800 x 0.75
-    px), its 50 % black filter, and mcSmartCorners placed once where Ford put it."""
-    stripes = define(root, "DefineShapeTag", STRIPES).find("shapeBounds")
-    bodies = define(root, "DefineShapeTag", BODIES).find("shapeBounds")
-    if (stripes.get("Xmax"), stripes.get("Ymax")) != ("15", "6968") or (bodies.get("Xmax"), bodies.get("Ymax")) != ("15999", "15"):
+def check_ford(root: ET.Element) -> None:
+    """The file is the Home screen this was made for: Ford's two dividers (0.75 x 348 and 800 x
+    0.75 px), its 50 % black filter, and mcSmartCorners with its two dividers, placed once."""
+    s = X.define(root, "DefineShapeTag", BODIES).find("shapeBounds")
+    c = X.define(root, "DefineShapeTag", HEADINGS).find("shapeBounds")
+    if (s.get("Xmax"), s.get("Ymax")) != ("15", "6968") or (c.get("Xmax"), c.get("Ymax")) != ("15999", "15"):
         raise SystemExit("the divider shapes are not Ford's: this is not the Home screen this tool was made for")
     colour = filter_colour(root)
-    if (colour.get("red"), colour.get("green"), colour.get("blue"), colour.get("alpha")) != ("0", "0", "0", "127"):
+    if tuple(colour.get(k) for k in ("red", "green", "blue", "alpha")) != ("0", "0", "0", "127"):
         raise SystemExit("the screen filter is not Ford's 50 % black: this is not the Home screen this tool was made for")
-    if any(len(placements(smart(root), character)) != 1 for character in DIVIDERS):
-        raise SystemExit("the dividers are not placed once each in mcSmartCorners: not the Home screen this tool was made for")
-    placed_smart = placements(container(root, "main"), SMART)
-    matrix = placed_smart[0].find("matrix") if len(placed_smart) == 1 else None
-    if matrix is None or placed_smart[0].get("name") != "mcSmartCorners" \
-            or (matrix.get("translateX"), matrix.get("translateY")) != tuple(str(v) for v in SMART_PLACED):
-        raise SystemExit("mcSmartCorners is not placed once where Ford put it: not the Home screen this tool was made for")
+    smart = X.container(root, SMART)
+    for depth, character in DIVIDERS.items():
+        if X.matrix_values(X.placement(smart, depth=depth, character=character))[5] == "true":
+            raise SystemExit("a divider placement is rotated or skewed: this is not the Home screen this tool was made for")
+    main = X.placement(X.container(root, "main"), name="mcSmartCorners", character=SMART)
+    if X.matrix_values(main)[:2] != tuple(str(v * X.TWIP) for v in SMART_PLACED) or X.matrix_values(main)[5] == "true":
+        raise SystemExit("mcSmartCorners is not where Ford put it: this is not the Home screen this tool was made for")
 
 
-def edit_xml(root: ElementTree.Element, preview: bool) -> None:
-    """The cards, in FFDec's XML form of the file."""
-    stripes, bodies = card_paths()
-    shape_xml(define(root, "DefineShapeTag", STRIPES), stripes)
-    shape_xml(define(root, "DefineShapeTag", BODIES), bodies)
-    for character in DIVIDERS:
-        place = placements(smart(root), character)[0]
-        set_translate(place, -SMART_AT[0] * TWIP, -SMART_AT[1] * TWIP)
-        place.set("blendMode", "1")  # normal; Ford's "screen" blend (4) would let the wallpaper through
+def edit_xml(root: ET.Element, face: glyphs.Face, preview: bool) -> None:
+    X.shape_xml(X.define(root, "DefineShapeTag", BODIES), body_paths())
+    X.shape_xml(X.define(root, "DefineShapeTag", HEADINGS), heading_paths(face))
+    smart = X.container(root, SMART)
+    for depth in DIVIDERS:
+        place = X.placement(smart, depth=depth)
+        X.set_matrix(place, -SMART_AT[0], -SMART_AT[1], keep_scale=False)
+        place.set("blendMode", "1")  # normal; Ford's "screen" blend would let the wallpaper through
         place.set("placeFlagHasBlendMode", "false")
-    set_translate(placements(container(root, "main"), SMART)[0], *SMART_PLACED)
+    X.set_matrix(X.placement(X.container(root, "main"), name="mcSmartCorners"), *SMART_PLACED, keep_scale=False)
     colour = filter_colour(root)
     for key, value in zip(("red", "green", "blue", "alpha"), (*BACKGROUND, 255)):
         colour.set(key, str(value))
-    if preview:  # Home hides the four design-time labels at run time; FFDec would draw them
-        for ident in LABELS:
-            define(root, "DefineEditTextTag", ident).set("initialText", "")
+    if preview:  # Home hides the four design-time labels at run time, and forces mcSmartCorners._x = 400;
+        for ident in LABELS:  # FFDec runs no code, so the picture gets both here
+            X.define(root, "DefineEditTextTag", ident).set("initialText", "")
+        X.set_matrix(X.placement(X.container(root, "main"), name="mcSmartCorners"), *SMART_AT, keep_scale=False)
 
 
-def check_xml(root: ElementTree.Element) -> None:
-    """Every shape, matrix and colour read back from the result's XML as written."""
-    stripes, bodies = card_paths()
-    for ident, paths in ((STRIPES, stripes), (BODIES, bodies)):
-        tag = define(root, "DefineShapeTag", ident)
-        want = ElementTree.fromstring(ElementTree.tostring(tag))
-        shape_xml(want, paths)
-        if read_shape(tag) != read_shape(want):
+def check_xml(root: ET.Element, face: glyphs.Face, preview: bool) -> None:
+    """Our shapes, matrices and colour read back from the result's XML."""
+    for ident, paths in ((BODIES, body_paths()), (HEADINGS, heading_paths(face))):
+        tag = X.define(root, "DefineShapeTag", ident)
+        want = ET.fromstring(ET.tostring(tag))
+        X.shape_xml(want, paths)
+        if X.read_shape(tag) != X.read_shape(want):
             raise SystemExit(f"shape {ident} did not read back as written")
-    expected = [(smart(root), c, (-SMART_AT[0] * TWIP, -SMART_AT[1] * TWIP)) for c in DIVIDERS]
-    expected.append((container(root, "main"), SMART, SMART_PLACED))
-    for items, character, (x, y) in expected:
-        place = placements(items, character)[0]
-        matrix = place.find("matrix")
-        got = (matrix.get("translateX"), matrix.get("translateY"), matrix.get("hasScale"), matrix.get("hasRotate"),
-               matrix.get("scaleX"), matrix.get("scaleY"), matrix.get("rotateSkew0"), matrix.get("rotateSkew1"))
-        if got != (str(x), str(y), "false", "false", None, None, None, None) \
-                or (character in DIVIDERS and place.get("placeFlagHasBlendMode") == "true"):
-            raise SystemExit(f"the placement of {character} did not read back as written")
-    colour = filter_colour(root)
-    if tuple(colour.get(k) for k in ("red", "green", "blue", "alpha")) != tuple(str(v) for v in (*BACKGROUND, 255)):
+    smart = X.container(root, SMART)
+    for depth in DIVIDERS:
+        place = X.placement(smart, depth=depth)
+        values = X.matrix_values(place)
+        if values[:3] != (str(-SMART_AT[0] * X.TWIP), str(-SMART_AT[1] * X.TWIP), "false") or values[5] != "false" \
+                or place.get("placeFlagHasBlendMode") == "true":
+            raise SystemExit(f"the placement at depth {depth} in mcSmartCorners did not read back as written")
+    at = SMART_AT if preview else SMART_PLACED
+    values = X.matrix_values(X.placement(X.container(root, "main"), name="mcSmartCorners"))
+    if values[:3] != (str(at[0] * X.TWIP), str(at[1] * X.TWIP), "false") or values[5] != "false":
+        raise SystemExit("mcSmartCorners' placement did not read back as written")
+    if tuple(int(filter_colour(root).get(k)) for k in ("red", "green", "blue", "alpha")) != (*BACKGROUND, 255):
         raise SystemExit("the filter colour did not read back as written")
 
 
-# ------------------------------------------------------------------ the eight numbers in the class Home
-def as2_double(raw: bytes) -> float:
-    """A double as ActionScript 2 pushes it: the two 32-bit halves of the little-endian IEEE number swapped."""
-    return struct.unpack("<d", raw[4:8] + raw[0:4])[0]
-
-
-def as2_double_bytes(value: float) -> bytes:
-    raw = struct.pack("<d", value)
-    return raw[4:8] + raw[0:4]
-
-
-PUSH, CONSTANT_POOL, INIT_ARRAY, SET_MEMBER = 0x96, 0x88, 0x42, 0x4F  # ActionScript 2 opcodes
-
-
-def actions_in(actions: bytes) -> list[tuple[int, list[tuple[int, str, object]]]]:
-    """(opcode, pushed items) for every action in a class's init code: a Push's items as (offset,
-    kind, value) with constant pool names resolved, an empty list for any other action.
-    build_phone_history.numbers reads one integer after a name, as {rowHeight: 50} compiles;
-    SC_TOP_LEFT = [10, 40] compiles to one Push of the name, 40, 10 and the count 2, then
-    InitArray and SetMember, and one of Home's eight numbers is a double, so this lists all."""
-    pool, out, p = [], [], 0
-    while p < len(actions) and actions[p]:
-        op = actions[p]
-        p += 1
-        if op < 0x80:
-            out.append((op, []))
-            continue
-        length = struct.unpack_from("<H", actions, p)[0]
-        start, p = p + 2, p + 2 + length
-        data, items = actions[start:p], []
-        if op == CONSTANT_POOL:
-            pool, q = [], 2
-            for _ in range(struct.unpack_from("<H", data)[0]):
-                end = data.index(b"\0", q)
-                pool.append(data[q:end].decode("latin1"))
-                q = end + 1
-        elif op == PUSH:
-            q = 0
-            while q < len(data):
-                kind, q = data[q], q + 1
-                size = {0: None, 1: 4, 2: 0, 3: 0, 4: 1, 5: 1, 6: 8, 7: 4, 8: 1, 9: 2}[kind]
-                if kind == 0:
-                    size = data.index(b"\0", q) - q + 1
-                if kind == 6:
-                    items.append((start + q, "double", as2_double(data[q:q + 8])))
-                elif kind == 7:
-                    items.append((start + q, "int", struct.unpack_from("<i", data, q)[0]))
-                elif kind in (8, 9):
-                    items.append((start + q, "name", pool[data[q] if kind == 8 else struct.unpack_from("<H", data, q)[0]]))
-                else:
-                    items.append((start + q, "other", None))
-                q += size
-        out.append((op, items))
-    return out
-
-
-def corner_slots(actions: bytes) -> dict[str, tuple[tuple[int, str, float], tuple[int, str, float]]]:
-    """For each SC_* constant, its y and its x as (offset in actions, "int" or "double", value).
-    Only the pattern Ford's compiler left is accepted: one Push ending in the name, y, x and the
-    count 2, followed at once by InitArray and SetMember; anything else in between is refused."""
-    rows = actions_in(actions)
+# ------------------------------------------------------------------ the eight numbers
+def corner_slots(body: bytes) -> dict[str, tuple[tuple[int, str, object], tuple[int, str, object]]]:
+    """For each slot, the (y push, x push) of its [x, y] literal as (offset in body, kind, value).
+    Only the pattern Ford's compiler left is accepted: the name, y, x and the count 2 pushed
+    with nothing in between, then InitArray and SetMember at once; anything else is refused."""
+    rows = X.class_pushes(body, CLASS)
     found = {}
-    for i, (op, items) in enumerate(rows):
-        if op != PUSH or len(items) < 4 or items[-4][1] != "name" or items[-4][2] not in CORNERS:
-            continue
-        name, y, x, count = items[-4:]
-        if (y[1] in ("int", "double") and x[1] in ("int", "double") and count[1:] == ("int", 2)
-                and [row[0] for row in rows[i + 1:i + 3]] == [INIT_ARRAY, SET_MEMBER]):
-            if name[2] in found:
-                raise SystemExit(f"{name[2]} is set twice in {CLASS}: not the Home screen this tool was made for")
-            found[name[2]] = (y, x)
-    if set(found) != set(CORNERS):
-        raise SystemExit(f"{CLASS} does not set all of {sorted(CORNERS)} as Ford's compiler did: "
+    for i, (_, kind, value) in enumerate(rows):
+        if kind == "const" and value in SLOT and i + 5 < len(rows):
+            y, x, count, init, member = rows[i + 1:i + 6]
+            if y[1] in ("int", "double") and x[1] in ("int", "double") and count[1:] == ("int", 2) \
+                    and init[1:] == ("op", X.INIT_ARRAY) and member[1:] == ("op", X.SET_MEMBER):
+                if SLOT[value] in found:
+                    raise SystemExit(f"{value} is set twice in {CLASS}: not the Home screen this tool was made for")
+                found[SLOT[value]] = (y, x)
+    if set(found) != set(SLOT.values()):
+        raise SystemExit(f"{CLASS} does not set all of {sorted(SLOT)} as Ford's compiler did: "
                          "not the Home screen this tool was made for")
     return found
 
 
-def change_code(body: bytes) -> bytes:
-    """The eight corner numbers in the class Home, changed in place (same length, same kinds)."""
-    found = swf_bitmaps.tags(body)
-    index = class_actions(body, CLASS)
-    code, header, contents = found[index]
-    actions = bytearray(contents[2:])
-    for name, ((yoff, ykind, yval), (xoff, xkind, xval)) in corner_slots(bytes(actions)).items():
-        _, ford, ours = CORNERS[name]
-        if (xval, yval) != ford:
-            raise SystemExit(f"{name} is {(xval, yval)}, not Ford's {ford}: not the Home screen this tool was made for")
-        for offset, kind, value in ((xoff, xkind, ours[0]), (yoff, ykind, ours[1])):
+def patch_corners(body: bytes) -> bytes:
+    """The eight corner numbers, changed in place (same length, same kinds) and read back."""
+    out = bytearray(body)
+    for name, ((yoff, ykind, yval), (xoff, xkind, xval)) in corner_slots(body).items():
+        if xval != FORD[name][0] or yval != FORD[name][1]:  # exactly: 0.75 is not Ford's 0
+            raise SystemExit(f"{name} is at {xval},{yval}, not Ford's {FORD[name]}: not the Home screen this tool was made for")
+        for off, kind, value in ((xoff, xkind, OURS[name][0]), (yoff, ykind, OURS[name][1])):
             if kind == "int":
-                struct.pack_into("<i", actions, offset, value)
+                struct.pack_into("<i", out, off, value)
             else:
-                actions[offset:offset + 8] = as2_double_bytes(float(value))
-    back = {name: (x[2], y[2]) for name, (y, x) in corner_slots(bytes(actions)).items()}
-    if back != {name: ours for name, (_, _, ours) in CORNERS.items()}:
-        raise SystemExit("the corner numbers did not read back as written")
-    found[index] = (code, header, contents[:2] + bytes(actions))
-    return b"".join(h + c for _, h, c in found)
-
-
-# ------------------------------------------------------------------ the tags
-def character(contents: bytes) -> int:
-    """The id a Define tag declares."""
-    return struct.unpack_from("<H", contents)[0]
-
-
-def placed(code: int, contents: bytes) -> int | None:
-    """The character a PlaceObject2 or PlaceObject3 places; None when it only moves one."""
-    if not contents[0] & 0x02:
-        return None
-    p = 3 if code == PLACE2 else 4  # the flags (one byte, two in PlaceObject3), then the depth
-    if code == PLACE3 and contents[1] & 0x18:  # a class name comes first
-        p = contents.index(b"\0", p) + 1
-    return struct.unpack_from("<H", contents, p)[0]
-
-
-class Bits:
-    """A reader of the bit-packed fields in a placement: its matrix and colour transform."""
-
-    def __init__(self, data: bytes, pos: int) -> None:
-        self.data, self.pos, self.bit = data, pos, 0
-
-    def read(self, count: int) -> int:
-        value = 0
-        for _ in range(count):
-            value = value << 1 | (self.data[self.pos] >> (7 - self.bit)) & 1
-            self.bit += 1
-            if self.bit == 8:
-                self.bit, self.pos = 0, self.pos + 1
-        return value
-
-    def end(self) -> int:
-        """The next byte boundary."""
-        return self.pos + (1 if self.bit else 0)
-
-
-def matrix_end(data: bytes, pos: int) -> int:
-    """Where a MATRIX starting at pos ends: scale and rotation each a flag, then a bit count and
-    two values when set; then the translation's bit count and two values."""
-    bits = Bits(data, pos)
-    for _ in range(2):
-        if bits.read(1):
-            count = bits.read(5)
-            bits.read(count), bits.read(count)
-    count = bits.read(5)
-    bits.read(count), bits.read(count)
-    return bits.end()
-
-
-def cxform_end(data: bytes, pos: int) -> int:
-    """Where a colour transform with alpha starting at pos ends."""
-    bits = Bits(data, pos)
-    add, mult, count = bits.read(1), bits.read(1), bits.read(4)
-    for _ in range(4 * (add + mult)):
-        bits.read(count)
-    return bits.end()
-
-
-def place_fields(code: int, contents: bytes) -> dict[str, object]:
-    """A PlaceObject2 or PlaceObject3 split into its fields by name, so each can be compared on
-    its own: flags, depth, class name, character, matrix, colour transform, ratio, name, clip
-    depth, blend mode, bitmap cache, visibility, background and clip actions (None when absent).
-    A filter list cannot be walked here; Ford's Home has none, so one is refused."""
-    flags = contents[0] | (contents[1] << 8 if code == PLACE3 else 0)
-    p = 1 if code == PLACE2 else 2  # after the flags: one byte, two in PlaceObject3
-    fields = {"flags": flags, "depth": contents[p:p + 2]}
-    p += 2
-    if flags & 0x0800 or (flags & 0x1000 and flags & 0x02):
-        end = contents.index(b"\0", p) + 1
-        fields["class"], p = contents[p:end], end
-    for name, present, size in (("character", flags & 0x02, 2), ("matrix", flags & 0x04, matrix_end),
-                                ("cxform", flags & 0x08, cxform_end), ("ratio", flags & 0x10, 2),
-                                ("name", flags & 0x20, 0), ("clip_depth", flags & 0x40, 2)):
-        if present:
-            end = (contents.index(b"\0", p) + 1 if name == "name" else
-                   size(contents, p) if callable(size) else p + size)
-            fields[name], p = contents[p:end], end
-    if flags & 0x0100:
-        raise SystemExit("a placement with filters: not the Home screen this tool was made for")
-    for name, present, size in (("blend", flags & 0x0200, 1), ("cache", flags & 0x0400, 1),
-                                ("visible", flags & 0x2000, 1), ("background", flags & 0x4000, 4)):
-        if present:
-            fields[name], p = contents[p:p + size], p + size
-    if flags & 0x80:
-        fields["clip_actions"] = contents[p:]
-        p = len(contents)
-    if p != len(contents):
-        raise SystemExit("a placement with trailing bytes: not the Home screen this tool was made for")
-    return fields
-
-
-def same_but(code: int, x: bytes, y: bytes, allowed: tuple[str, ...]) -> bool:
-    """Two placements equal in every field but the allowed ones (and, when the blend mode may
-    change, in its flag)."""
-    a, b = place_fields(code, x), place_fields(code, y)
-    for fields in (a, b):
-        for name in allowed:
-            fields.pop(name, None)
-        if "blend" in allowed:
-            fields["flags"] &= ~0x0200
-    return a == b
-
-
-def sprite_tags(contents: bytes) -> list[tuple[int, bytes, bytes]]:
-    """The tags inside a DefineSprite. swf_bitmaps.tags wants a frame header first; a sprite has
-    none, so it gets a blank one (five zero bytes: an empty rectangle, rate and count)."""
-    return swf_bitmaps.tags(bytes(5) + contents[4:])[1:]
-
-
-def wanted(code: int, contents: bytes, preview: bool) -> bool:
-    """A tag this tool changes: the three shapes, the sprite, its placement; for the preview the labels."""
-    if code in (SHAPE, SHAPE3, SPRITE):
-        return character(contents) in (FILTER, STRIPES, BODIES, SMART)
-    if code == PLACE2:
-        return placed(code, contents) == SMART
-    return preview and code == EDIT_TEXT and character(contents) in LABELS
-
-
-def splice(original: bytes, rebuilt: bytes, preview: bool) -> bytes:
-    """The car's body with only the tags this tool changes taken from FFDec's rebuilt body."""
-    a, b = swf_bitmaps.tags(original), swf_bitmaps.tags(rebuilt)
-    if [t[0] for t in a] != [t[0] for t in b]:
-        raise SystemExit("FFDec changed the list of tags")
-    return b"".join(h2 + c2 if code != -1 and wanted(code, c, preview) else h + c
-                    for (code, h, c), (_, h2, c2) in zip(a, b))
-
-
-def check(old: bytes, new: bytes) -> int:
-    """Tag by tag: only the three shapes, the sprite (inside it only the two divider placements),
-    its placement on the main timeline and the class Home differ, the class only in its eight
-    numbers. Returns how many tags changed, sprites' tags counted one by one."""
-    (head, before), (head2, after) = swf_bitmaps.unpack(old), swf_bitmaps.unpack(new)
-    for data, body in ((old, before), (new, after)):
-        if struct.unpack_from("<I", data, 4)[0] != 8 + len(body):
-            raise SystemExit("the file's length in its header is wrong")
-    a, b = swf_bitmaps.tags(before), swf_bitmaps.tags(after)
-    if head != head2 or a[0] != b[0] or [t[0] for t in a] != [t[0] for t in b]:
-        raise SystemExit("the header or the list of tags changed")
-    index = class_actions(before, CLASS)
-    allowed = {i for i, (code, _, c) in enumerate(a) if code != -1 and wanted(code, c, False)} | {index}
-    changed = {i for i, (x, y) in enumerate(zip(a, b)) if x[1:] != y[1:]}
-    if changed - allowed:
-        raise SystemExit(f"tags changed that should not have: {sorted(changed - allowed)}")
-    main = next(i for i, (code, _, c) in enumerate(a) if code == PLACE2 and placed(code, c) == SMART)
-    if main in changed and not same_but(PLACE2, a[main][2], b[main][2], ("matrix",)):
-        raise SystemExit("mcSmartCorners' placement changed in more than its matrix")
-    sprite = next(i for i, (code, _, c) in enumerate(a) if code == SPRITE and character(c) == SMART)
-    inside, inside2 = sprite_tags(a[sprite][2]), sprite_tags(b[sprite][2])
-    if a[sprite][2][:4] != b[sprite][2][:4] or [t[0] for t in inside] != [t[0] for t in inside2]:
-        raise SystemExit("mcSmartCorners' header or its list of tags changed")
-    for (code, h, c), (_, h2, c2) in zip(inside, inside2):
-        if (h, c) == (h2, c2):
-            continue
-        if not (code == PLACE3 and placed(code, c) in DIVIDERS and same_but(code, c, c2, ("matrix", "blend"))):
-            raise SystemExit("more than the two divider placements' matrix and blend mode changed inside mcSmartCorners")
-    x, y = a[index][2], b[index][2]
-    numbers = set()
-    for offset, kind, _ in (slot for pair in corner_slots(y[2:]).values() for slot in pair):
-        numbers |= set(range(offset + 2, offset + 2 + (4 if kind == "int" else 8)))
-    if len(x) != len(y) or any(p != q and i not in numbers for i, (p, q) in enumerate(zip(x, y))):
-        raise SystemExit("the class Home changed outside the eight corner numbers")
-    return sum(p != q for p, q in zip(every_tag(old), every_tag(new)))
-
-
-def build(data: bytes, preview: bool = False) -> bytes:
-    """The car's Home.swf with the cards: the numbers first (no Docker needed to refuse a wrong
-    file), then the shapes through FFDec, spliced and read back. check() comes after, in main: a
-    preview build (labels blanked) could not pass it."""
-    if data[:3] != b"FWS" or struct.unpack_from("<I", data, 4)[0] != len(data):
-        raise SystemExit("not an uncompressed Flash file of the length its header says: "
-                         "this is not the Home screen this tool was made for")
-    head, body = swf_bitmaps.unpack(data)
-    body = change_code(body)
-    with tempfile.TemporaryDirectory() as temp:
-        work = Path(temp)
-        (work / "in.swf").write_bytes(data)
-        run_ffdec(work, "-swf2xml", "/work/in.swf", "/work/in.xml")
-        tree = ElementTree.parse(work / "in.xml")
-        check_ford(tree.getroot())
-        edit_xml(tree.getroot(), preview)
-        tree.write(work / "out.xml", encoding="utf-8", xml_declaration=True)
-        run_ffdec(work, "-xml2swf", "/work/out.xml", "/work/out.swf")
-        rebuilt = swf_bitmaps.unpack((work / "out.swf").read_bytes())[1]
-        result = swf_bitmaps.pack(head, splice(body, rebuilt, preview))
-        (work / "check.swf").write_bytes(result)
-        run_ffdec(work, "-swf2xml", "/work/check.swf", "/work/check.xml")
-        check_xml(ElementTree.parse(work / "check.xml").getroot())
+                out[off:off + 8] = X.as2_double_bytes(float(value))
+    result = bytes(out)
+    back = {n: (s[1][2], s[0][2]) for n, s in corner_slots(result).items()}
+    if any(back[n] != OURS[n] for n in OURS) or set(back) != set(OURS):
+        raise SystemExit(f"the corner numbers did not read back as written: {back}")
     return result
 
 
+# ------------------------------------------------------------------ build and check
+def build(original: bytes, face: glyphs.Face, work: Path, preview: bool = False) -> bytes:
+    """The car's Home.swf as the grid. A preview build (labels blanked, the sprite at its run-time
+    x) is a picture only and skips the tag check, which it could not pass."""
+    if original[:3] != b"FWS" or struct.unpack_from("<I", original, 4)[0] != len(original):
+        raise SystemExit("not an uncompressed Flash file of the length its header says: "
+                         "this is not the Home screen this tool was made for")
+    tree = X.swf2xml(work, original)
+    check_ford(tree.getroot())
+    edit_xml(tree.getroot(), face, preview)
+    rebuilt = X.xml2swf(work, tree)
+    head, body = swf_bitmaps.unpack(original)
+    body = X.splice(body, swf_bitmaps.unpack(rebuilt)[1],
+                    defines={(X.SHAPE, BODIES), (X.SHAPE, HEADINGS), (X.SHAPE3, FILTER)}
+                    | ({(X.EDIT_TEXT, i) for i in LABELS} if preview else set()),
+                    main_places={(6, "mcSmartCorners")}, sprite_places={SMART: {(d, "") for d in DIVIDERS}})
+    result = swf_bitmaps.pack(head, patch_corners(body))
+    check_xml(X.swf2xml(work, result, "check").getroot(), face, preview)
+    if not preview:
+        check(original, result)
+    return result
+
+
+def check(original: bytes, result: bytes) -> list[tuple]:
+    """Tag by tag: only the three shapes, the sprite (inside it the two divider placements, in
+    matrix and blend mode only), its own placement (matrix only) and the class Home differ, the
+    class only in its eight numbers; and the result is not as long as the car's file. Returns
+    the changed keys (eight, the sprite's own included)."""
+    X.check_length(original, result, HOME)
+    changed = X.check(original, result, ALLOWED, place_allowed=("matrix", "blend"))
+    body = swf_bitmaps.unpack(result)[1]
+    found = corner_slots(body)
+    if any(found[n][1][2] != OURS[n][0] or found[n][0][2] != OURS[n][1] for n in OURS):
+        raise SystemExit("the corner numbers in the result are not ours")
+    slots = [(off, kind) for pair in found.values() for off, kind, _ in pair]
+    X.check_class(swf_bitmaps.unpack(original)[1], body, CLASS, slots)
+    if len(changed) != 8:
+        raise SystemExit(f"expected 8 changed tags, got {changed}")
+    return changed
+
+
 # ------------------------------------------------------------------ the preview
-QUADRANTS = {"phone": "Phone/PhoneSmartCorner.swf", "nav": "Nav/NavSmartCorner.swf",
-             "media": "Media/MediaSmartCorner.swf", "climate": "Climate/ClimateSmartCorner.swf"}
-# Each quadrant file in an idle state (a connected phone, FM with presets, no route, two seat
-# heaters), through FFDec's XML form: placements dropped by instance name (in the main timeline
-# or a sprite, by id), one moved as the code moves it, sample texts set by field id.
-IDLE = {
-    "phone": {
-        "drop": {"main": ["mcActiveCallPanel", "phoneCallFrame", "progressIconInst", "compButtonAddPhone"],
-                 "87": ["iconEA", "iconE911", "iconRoaming", "iconMessage"],
-                 "85": ["iconBatteryLife0", "iconBatteryLife1", "iconBatteryLife2", "iconBatteryLife3", "iconBatteryLife5"],
-                 "86": ["iconRadioSignal0", "iconRadioSignal1", "iconRadioSignal2", "iconRadioSignal3", "iconRadioSignal5"]},
-        "text": {"103": "Telefon ansluten", "91": "Stör inte"},
-    },
-    "nav": {
-        "drop": {"main": ["compButtonWhereAmI", "compButtonDestination", "compETA", "compButtonCancelRoute",
-                          "activeIconInst", "milesToGoTxt", "maneuverStreetTxt"]},
-        "text": {"12": "Storgatan"},
-    },
-    "media": {
-        "drop": {"main": ["racActivationBTIcon", "compButtonPower", "dabIcon", "mcHDRadioScreen", "mcSatRadioScreen",
-                          "satIcon", "mcCDScreen", "mcDeviceMetaScreen", "mcDeviceNoMetaScreen", "iconTA"],
-                 "20": ["txtLabel", "txtLabel2"]},
-        "text": {"17": "P1", "48": "P2", "62": "P3", "66": "P4", "55": "MIX", "72": "ROCK", "76": "P3"},
-    },
-    "climate": {
-        "drop": {"main": ["compPower", "compDriverTemp", "compPassengerTemp", "txtLeftTempCentered", "txtRightTempCentered"],
-                 "61": ["compCooledSeatsDriver", "compHeatedSteeringWheel"], "64": ["compCooledSeatsPassenger"],
-                 "30": ["bgButtonPanelSOLO", "LEDTwoHeatedSeatsDriver"], "62": ["bgButtonPanelSOLO", "LEDTwoHeatedSeatsPassenger"]},
-        "move": {"61": {"compHeatedSeatsDriver": (1320, 0)}},  # as UpdateCornerView does: _x = 66
-        "text": {"67": "22.0°", "68": "22.0°"},
-    },
+PICTURES = {"": "home.png", "22": "home-chips22.png", "temps": "home-temps.png"}
+# content blocks measured per quadrant: label -> quadrant-local box (x0, y0, x1, y1[, x split])
+BLOCKS = {
+    "phone": {"icons": (0, 0, 400, 48), "text": (0, 60, 400, 112), "chip": (0, 112, 400, 175)},
+    "nav": {"street": (0, 60, 400, 150)},
+    "media": {"source icon": (90, 10, 150, 48), "name": (40, 42, 360, 91), "presets": (0, 91, 400, 190)},
+    "climate": {"seats": (0, 44, 400, 195, 198)},
 }
-FRAME = (20, 22, 26)  # the frame's bars, which are not Home's, drawn flat on the preview
-
-
-def idle(root: ElementTree.Element, spec: dict, background: tuple[int, int, int]) -> None:
-    """One quadrant file's XML in its idle state, on a black or white background. What a file does
-    not have (another car's quadrant files) is left alone: the preview is a picture, not a check."""
-    for which, names in spec.get("drop", {}).items():
-        box = container(root, which)
-        for item in list(box) if box is not None else []:
-            if item.get("type") in ("PlaceObject2Tag", "PlaceObject3Tag") and item.get("name") in names:
-                box.remove(item)
-    for which, moves in spec.get("move", {}).items():
-        for item in container(root, which) if container(root, which) is not None else []:
-            if item.get("name") in moves:
-                matrix = item.find("matrix")
-                matrix.set("translateX", str(moves[item.get("name")][0]))
-                matrix.set("translateY", str(moves[item.get("name")][1]))
-                matrix.set("nTranslateBits", "16")
-    for ident, text in spec.get("text", {}).items():
-        field = find(root, "DefineEditTextTag", int(ident))
-        if field is None:
-            continue
-        html = field.get("initialText") or '<p align="center"></p>'
-        if "<font" in html:  # the first font run gets the text; one paragraph only
-            html = re.sub(r"(<font[^>]*>).*?(</font>)", lambda m: m.group(1) + text + m.group(2), html, count=1, flags=re.S)
-            html = re.sub(r"</p><p.*$", "</p>", html, flags=re.S)
-        else:
-            html = re.sub(r"(<p[^>]*>).*?(</p>)", lambda m: m.group(1) + text + m.group(2), html, count=1, flags=re.S)
-        field.set("initialText", html)
-    for tag in root.find("tags"):
-        if tag.get("type") == "SetBackgroundColorTag":
-            for key, value in zip(("red", "green", "blue"), background):
-                tag.find("backgroundColor").set(key, str(value))
-
-
-def render(work: Path, swfs: dict[str, bytes]) -> dict[str, Image.Image]:
-    """The first frame of each file, rendered by FFDec in one run."""
-    (work / "in").mkdir(parents=True)
-    for name, data in swfs.items():
-        (work / "in" / f"{name}.swf").write_bytes(data)
-    run_ffdec(work, "-select", "1", "-export", "frame", "/work/out", "/work/in")
-    return {name: Image.open(work / "out" / f"{name}.swf" / "1.png").convert("RGB") for name in swfs}
+VARIANT_BLOCKS = {"temps": {"climate": {"temps": (150, 8, 400, 44, 313)}}}
+QUADRANT = {"phone": "PhoneSmartCorner", "nav": "NavSmartCorner", "media": "MediaSmartCorner", "climate": "ClimateSmartCorner"}
 
 
 def with_alpha(on_black: Image.Image, on_white: Image.Image) -> Image.Image:
-    """A render's exact alpha from two renders: alpha = 255 - (white - black); the colour from the
-    black one, divided by the alpha."""
+    """A render's exact alpha from two renders: alpha = 255 - (white - black); the colour from
+    the black one, divided by the alpha."""
     alpha = ImageChops.invert(ImageChops.difference(on_white, on_black).convert("L"))
     image = on_black.convert("RGBA")
-    pixels, levels = image.load(), alpha.load()
+    px, al = image.load(), alpha.load()
     for y in range(image.height):
         for x in range(image.width):
-            a = levels[x, y]
-            r, g, b, _ = pixels[x, y]
-            pixels[x, y] = (min(255, r * 255 // a), min(255, g * 255 // a), min(255, b * 255 // a), a) if a else (0, 0, 0, 0)
+            a = al[x, y]
+            r, g, b, _ = px[x, y]
+            px[x, y] = (min(255, r * 255 // a), min(255, g * 255 // a), min(255, b * 255 // a), a) if a else (0, 0, 0, 0)
     return image
 
 
-def quadrants(work: Path, files: dict[str, Path]) -> dict[str, Image.Image]:
-    """The four quadrant files in their idle state, with alpha."""
-    work.mkdir(parents=True)
-    variants = {}
-    for name, file in files.items():
-        (work / "in.swf").write_bytes(file.read_bytes())
-        run_ffdec(work, "-swf2xml", "/work/in.swf", "/work/in.xml")
-        for suffix, background in (("black", (0, 0, 0)), ("white", (255, 255, 255))):
-            tree = ElementTree.parse(work / "in.xml")
-            idle(tree.getroot(), IDLE[name], background)
-            tree.write(work / f"{name}-{suffix}.xml", encoding="utf-8", xml_declaration=True)
-            run_ffdec(work, "-xml2swf", f"/work/{name}-{suffix}.xml", f"/work/{name}-{suffix}.swf")
-            variants[f"{name}-{suffix}"] = (work / f"{name}-{suffix}.swf").read_bytes()
-    shots = render(work / "render", variants)
-    return {name: with_alpha(shots[f"{name}-black"], shots[f"{name}-white"]) for name in files}
+def runs(values: list[bool]) -> list[tuple[int, int]]:
+    out, start = [], None
+    for i, v in enumerate(values + [False]):
+        if v and start is None:
+            start = i
+        elif not v and start is not None:
+            out.append((start, i))
+            start = None
+    return out
 
 
-def compose(base: Image.Image, corners: dict[str, Image.Image], which: int, note: str) -> Image.Image:
-    """Home's frame with the quadrants where Home moves them (which: 0 Ford's places, 1 ours), and
-    the frame's bars, which are not Home.swf's, flat."""
-    image = base.convert("RGBA")
-    for name, ford, ours in CORNERS.values():
-        if name in corners:
-            image.alpha_composite(corners[name], (ford, ours)[which])
-    draw = ImageDraw.Draw(image)
-    for top, bottom in ((0, 48), (432, 480)):
-        draw.rectangle((0, top, 799, bottom - 1), fill=(*FRAME, 255))
-    draw.text((8, 16), "the frame's title bar (not in Home.swf)", fill=(120, 120, 120, 255))
-    draw.text((8, 450), "the frame's bottom bar (not in Home.swf)   " + note, fill=(120, 120, 120, 255))
-    return image.convert("RGB")
+def measure_home(home: Image.Image) -> list[str]:
+    px = home.load()
+    is_card = lambda p: max(abs(a - b) for a, b in zip(p[:3], CARD)) <= 1  # noqa: E731
+    lines = []
+    for y, label in ((146, "top row"), (334, "bottom row")):
+        lines.append(f"cards, {label} (y={y}): x runs {runs([is_card(px[x, y]) for x in range(800)])}")
+    for x, label in ((200, "left column"), (600, "right column")):
+        lines.append(f"cards, {label} (x={x}): y runs {runs([is_card(px[x, y]) for y in range(480)])}")
+    for name, (cx, cy, cw, ch) in CARDS.items():
+        band = home.crop((cx, cy + 6, cx + cw, cy + 40)).convert("RGB")
+        mask = ImageChops.difference(band, Image.new("RGB", band.size, ACCENT[name])).convert("L").point(lambda v: 255 if v < 90 else 0)
+        box = mask.getbbox()
+        lines.append(f"heading {name!r}: screen x {box[0] + cx}-{box[2] + cx}, y {box[1] + cy + 6}-{box[3] + cy + 6}")
+    return lines
 
 
-def preview(source: Path, ours: bytes, folder: Path) -> None:
-    """Ford's Home and ours, rendered by FFDec, side by side; with the quadrant files when they
-    lie beside Home.swf as in the drive log."""
+def measure_corner(key: str, corner: Image.Image, blocks: dict | None = None, note: str = "") -> list[str]:
+    ox, oy = OURS[key]
+    alpha = corner.getchannel("A")
+    lines = []
+    for label, spec in (blocks or BLOCKS[key]).items():
+        x0, y0, x1, y1 = spec[:4]
+        parts = [(x0, x1)] if len(spec) == 4 else [(x0, spec[4]), (spec[4], x1)]
+        for i, (px0, px1) in enumerate(parts):
+            side = f" {('left', 'right')[i]}" if len(parts) > 1 else ""
+            box = alpha.crop((px0, y0, px1, y1)).point(lambda v: 255 if v > 40 else 0).getbbox()
+            if box is None:
+                lines.append(f"{key} {label}{note}{side}: nothing drawn")
+                continue
+            sx0, sy0, sx1, sy1 = box[0] + px0 + ox, box[1] + y0 + oy, box[2] + px0 + ox, box[3] + y0 + oy
+            lines.append(f"{key} {label}{note}{side}: screen x {sx0}-{sx1} (centre {(sx0 + sx1) / 2:.1f}), "
+                         f"y {sy0}-{sy1} (centre {(sy0 + sy1) / 2:.1f})")
+    return lines
+
+
+def preview(home_preview: bytes, corners: dict[str, bytes], folder: Path, work: Path, photo: Path | None) -> list[str]:
+    """Home-preview with the quadrant files' idle variants composed where Home moves them."""
     folder.mkdir(parents=True, exist_ok=True)
-    files = {name: source.parent.parent / path for name, path in QUADRANTS.items()}
-    with tempfile.TemporaryDirectory() as temp:
-        work = Path(temp)
-        (work / "in.swf").write_bytes(source.read_bytes())
-        run_ffdec(work, "-swf2xml", "/work/in.swf", "/work/in.xml")
-        tree = ElementTree.parse(work / "in.xml")
-        for ident in LABELS:
-            define(tree.getroot(), "DefineEditTextTag", ident).set("initialText", "")
-        for sprite in ("28", "27"):  # the Loader and View components draw a grey box at design time
-            box = container(tree.getroot(), sprite)
-            for item in list(box) if box is not None else []:
-                if item.get("name") == "boundingBox_mc":
-                    box.remove(item)
-        tree.write(work / "ford.xml", encoding="utf-8", xml_declaration=True)
-        run_ffdec(work, "-xml2swf", "/work/ford.xml", "/work/ford.swf")
-        shots = render(work / "home", {"ford": (work / "ford.swf").read_bytes(), "ours": ours})
-        corners = quadrants(work / "quadrants", files) if all(f.is_file() for f in files.values()) else {}
-    note = "" if corners else "(quadrant files not found beside Home.swf)"
-    ford = compose(shots["ford"], corners, 0, "wallpaper not rendered " + note)
-    cards = compose(shots["ours"], corners, 1, note)
-    ford.save(folder / "home-ford.png")
-    cards.save(folder / "home-ours.png")
-    shots["ours"].save(folder / "home-ours-cards-only.png")
-    sheet = Image.new("RGB", (800 * 2 + 20, 480 + 24), (255, 255, 255))
-    sheet.paste(ford, (0, 24))
-    sheet.paste(cards, (820, 24))
-    draw = ImageDraw.Draw(sheet)
-    draw.text((4, 6), "Ford's Home.swf with the quadrant files (idle)", fill="black")
-    draw.text((824, 6), "ours, the same quadrant files moved into the cards", fill="black")
-    sheet.save(folder / "home-ford-vs-ours.png")
-    for name, image in corners.items():
-        image.save(folder / f"quadrant-{name}-idle.png")
+    swfs = {"home": home_preview}
+    for key, name in QUADRANT.items():
+        for variant, data in build_corners.idle_variants(name, corners[name], work / name).items():
+            swfs[f"{key}{variant}"] = data
+    shots = {name: Image.open(path).convert("RGB") for name, path in X.render(work / "render", swfs).items()}
+    report = measure_home(shots["home"])
+    pictures = {}
+    for variant, filename in PICTURES.items():
+        image = shots["home"].convert("RGBA")
+        for key in QUADRANT:
+            v = variant if f"{key}{variant}-black" in shots else ""
+            corner = with_alpha(shots[f"{key}{v}-black"], shots[f"{key}{v}-white"])
+            image.alpha_composite(corner, OURS[key])
+            if variant == "":
+                corner.save(folder / f"quadrant-{key}-idle.png")
+                report += measure_corner(key, corner)
+            elif key in VARIANT_BLOCKS.get(variant, {}):
+                report += measure_corner(key, corner, VARIANT_BLOCKS[variant][key], f" ({variant} variant)")
+        draw = ImageDraw.Draw(image)
+        for top, bottom in ((0, 48), (432, 480)):
+            draw.rectangle((0, top, 799, bottom - 1), fill=(0, 0, 0, 255))
+        note = {"": "chips (13,14,18); temperature fields empty as in the car", "22": "chips (22,24,30)",
+                "temps": "chips (13,14,18); sample temperatures shown"}[variant]
+        draw.text((8, 18), "frame: title bar (AppConsole, not Home.swf)", fill=(60, 60, 60, 255))
+        draw.text((8, 452), "frame: bottom bar (AppConsole, not Home.swf)   " + note, fill=(60, 60, 60, 255))
+        pictures[variant] = image.convert("RGB")
+        pictures[variant].save(folder / filename)
+    shots["home"].save(folder / "home-cards-only.png")
+    if photo:
+        shot = Image.open(photo).convert("RGB")
+        shot = shot.resize((800, round(shot.height * 800 / shot.width)), Image.LANCZOS)
+        sheet = Image.new("RGB", (1620, max(480, shot.height) + 24), (255, 255, 255))
+        sheet.paste(shot, (0, 24))
+        sheet.paste(pictures[""], (820, 24))
+        d = ImageDraw.Draw(sheet)
+        d.text((4, 6), "in the car (photo)", fill="black")
+        d.text((824, 6), "built: Home.swf + the four quadrant files, FFDec renders, idle state", fill="black")
+        sheet.save(folder / "home-vs-car.png")
+    (folder / "measurements.txt").write_text("\n".join(report) + "\n")
+    return report
 
 
 # ------------------------------------------------------------------ the command line
-def options(argv: list[str]) -> tuple[str, str, Path | None]:
-    """The command line: (source, target, preview folder). An option without its value, an
-    unknown option or a missing file name stops with the usage."""
-    folder, args, i = None, [], 0
+def options(argv: list[str]) -> tuple[Path, Path, Path | None, Path | None]:
+    folder = photo = None
+    args, i = [], 0
     while i < len(argv):
-        if argv[i] == "--preview":
+        if argv[i] in ("--preview", "--photo"):
             if i + 1 == len(argv) or argv[i + 1].startswith("--"):
                 raise SystemExit(__doc__)
-            folder, i = Path(argv[i + 1]), i + 2
+            if argv[i] == "--preview":
+                folder = Path(argv[i + 1])
+            else:
+                photo = Path(argv[i + 1])
+            i += 2
             continue
         if argv[i].startswith("--"):
             raise SystemExit(__doc__)
@@ -766,21 +406,26 @@ def options(argv: list[str]) -> tuple[str, str, Path | None]:
         i += 1
     if len(args) != 2:
         raise SystemExit(__doc__)
-    return args[0], args[1], folder
+    return Path(args[0]), Path(args[1]), folder, photo
 
 
 def main(argv: list[str]) -> None:
-    source, target, folder = options(argv)
-    data = Path(source).read_bytes()
-    result = build(data)
-    changed = check(data, result)
-    Path(target).write_bytes(result)
-    print(f"{target}: four cards; {changed} of {len(every_tag(data))} tags changed (the three shapes, the two "
-          f"divider placements, mcSmartCorners' own, the class Home's eight numbers); everything else byte for "
-          f"byte; sha256 {hashlib.sha256(result).hexdigest()}, {len(result)} bytes")
-    if folder:
-        preview(Path(source), build(data, preview=True), folder)
-        print(f"previews in {folder}")
+    source, target, folder, photo = options(argv)
+    original = (source / HOME).read_bytes()
+    face = glyphs.Face()
+    with tempfile.TemporaryDirectory() as temp:
+        work = Path(temp)
+        result = build(original, face, work / "home")
+        (target / HOME).parent.mkdir(parents=True, exist_ok=True)
+        (target / HOME).write_bytes(result)
+        print(f"{target / HOME}: the grid; 8 of {len(swf_bitmaps.tags(swf_bitmaps.unpack(original)[1])) - 1} top-level tags' "
+              f"content changed (three shapes, mcSmartCorners and its placement, the class Home's eight numbers); "
+              f"everything else byte for byte; sha256 {hashlib.sha256(result).hexdigest()}, {len(result)} bytes")
+        corners = build_corners.build_all(source, target, work / "corners")
+        if folder:
+            home_preview = build(original, face, work / "home-preview", preview=True)
+            print("\n".join(preview(home_preview, corners, folder, work / "preview", photo)))
+            print(f"previews in {folder}")
 
 
 if __name__ == "__main__":
