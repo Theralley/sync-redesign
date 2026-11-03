@@ -161,9 +161,9 @@ can at worst fail when opened; a changed main screen is read at every start.
   - The side menus (Settings, Info) still looked glossy. Their rows are pictures in `Menu.swf`
     and `Info.swf`, and the outline is drawn by code in the theme's System colour; neither is
     one of the frame's strips.
-- **On this Mondeo Home never shows the climate temperatures.** The class makes the two fields
-  visible but fills them only from the set-point messages, which never come. Only the seat
-  buttons show.
+- **On the photos Home showed no climate temperatures.** The class makes the two fields visible
+  but fills them only from the set-point messages, which had not come (the climate was off; see
+  the next section). Only the seat buttons showed.
 - **On Home the bars repeat the cards.** The phone label shows a Home-only view ("Telefon"), the
   navigation label the area's name, the media label "Underhållning" and the climate label
   "Klimat".
@@ -174,6 +174,22 @@ can at worst fail when opened; a changed main screen is read at every start.
   (renders of the real sprites at their runtime frames).
 - The dark outline round all text is also on our own Apps menu, and no Ford code or placement
   uses a filter: the player or the camera, not a target.
+
+## Version 2 in the car (2026-11-03, midday)
+
+- `bundle-6166` ran at about 12:50; all 18 parts verified byte for byte on import: 14 of Ford's
+  start-up files changed at once (the frame, Home and its four corners, the five console
+  objects, `Media.swf`, the two side menus) and SYNC started normally.
+- The photos show the grid, the headings, the black bars with only the clock on Home, the labels
+  back on every other screen, and flat side menus.
+- **A clip scaled to zero does not stay hidden if the theme sizes it.** The presets' outline clips
+  were placed at scale 0; the theme's code sets their width and height when it draws the
+  outline, so they came back, at Ford's place, not round our chips.
+- **Home's climate card does show the temperatures** when the climate is on: the set-point
+  messages arrive then (on the fifth visit's photos the climate was off). A stray "Klimat" text
+  appeared beside the seat buttons.
+- Only the system colour's outline is borderless in our theme; buttons in the areas' own screens
+  (climate, radio, phone) keep Ford's light grey edge (the areas' dayColor 0x666666).
 
 ## Next
 

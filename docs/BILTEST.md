@@ -51,6 +51,19 @@ I bilen:
    i tio sekunder).
 7. Ser något fel ut: UNTITLED 2. Ta med fotona och båda stickorna till Macen.
 
+**Resultat (2026-11-03, cirka 12:50):** SYNC-stickan körd, alla 18 delar verifierade byte för
+byte vid importen. Fotona visar version 2: fyra kort i rutnät med rubriker, svarta lister med bara
+klockan upptill på Hem, platta menyer i Info och Inställningar, och etiketterna kvar på de andra
+skärmarna. Klimatkortet visade temperaturerna på rubrikraden (klimatet var på). Rasmus: "under
+media on 'home' some squres (white edges square) are off". Tre fel:
+- Förinställningarnas tunna ljusa ramar ritas förskjutna, ungefär en rad upp, inte runt
+  knapparna: temat ritar ramen själv och ställer tillbaka storleken vi nollade.
+- En lös grå "Klimat" till höger om sätesknapparna i klimatkortet.
+- Knapparna på områdenas skärmar (klimat, radio, telefon) har kvar Fords ljusgrå kant: bara
+  systemets färg är kantlös i temat.
+
+UNTITLED 2 behövdes inte.
+
 ## Femte turen: rak ram, nästan svart, Hem som kort (förberett 2026-11-02)
 
 Fjärde turen visade att bilens skärm gör mörkgrått ljust, så allt flyttas närmare svart. Dessutom
