@@ -5,10 +5,21 @@ steps that can always be undone. The companion of
 [sync2-auto-magic](https://github.com/Theralley/sync2-auto-magic), which builds the USB job
 sticks this project uses to read from and write to the car.
 
-**Status (2026-10-31):** the first drive log is in ([docs/FINDINGS.md](docs/FINDINGS.md)): the colours
-are a plain XML file and four gradient pictures, and the full Lincoln skin is on the car. The
-first change (Lincoln's colours, with its undo stick) is built and rehearsed on the Mac, and
-not yet run in the car.
+![The aim right now: version 2 of Home, four equal cards on one 8 px grid, black bars with only the clock on top (our own drawing)](docs/mockups/v2-home.png)
+
+**The aim right now: version 2** (our own drawing above, `tools/mockup_v2.py`). The frame and Home
+are rebuilt on one 8 px grid instead of repainted:
+- four equal cards, each with a heading in its area's colour;
+- on Home, black bars with only the clock on top, and Info, Home and Settings below;
+- flat buttons without outlines;
+- flat side menus in Settings and Info.
+
+**Status (2026-11-03):** version 2 has run in the car. It changed 14 of Ford's start-up files at
+once, and every part was verified byte for byte. Its three faults are fixed for the next visit
+(the seventh): the presets' outlines out of place, a stray label in the climate card, and grey
+edges on the areas' own screens. What each visit changed and showed is in
+[docs/FINDINGS.md](docs/FINDINGS.md); the car tests, step by step, in [docs/BILTEST.md](docs/BILTEST.md)
+(Swedish). Next: the phone screen's own glossy menu (`Phone.swf`).
 
 ## What SYNC 2's screens are
 
@@ -85,6 +96,7 @@ only reads from the car.
 | `tools/make_theme.py CAR_THEMES OUT [--borderless [--palette night\|deep\|v2]] [--no-glow]` | The "Night" colours: the car's own Theme.XML and gradients, recoloured in exactly their format; `--borderless` gives every button's outline the button's own colour (`v2`: 0x16181E, the chips22 strip), `--no-glow` makes the four area glows black |
 | `tools/preview_screens.py CAR_APPS OUT` | Renders Ford's screens on the Mac (FFDec) as a baseline; keep the pictures private |
 | `tools/mockup_redesign.py OUT [--lang sv\|en]` | Draws the redesign sketches (our own drawings), Swedish by default, and prints how much light the night screen gives off |
+| `tools/mockup_v2.py OUT.png [--scale N]` | Draws the aim right now, version 2's Home (our own drawing, `docs/mockups/v2-home.png`), with the grid, colours and font the build tools use |
 | `tools/icons.py` | The redesign's one icon family (43 icons, climate and call symbols after Ford's own), used by the tiles, the sketches and the screens; `python3 -m unittest discover tests` checks it |
 | `tools/swf_bitmaps.py IN.swf --list` / `IN.swf OUT.swf ID=pic.png ...` | Replaces pictures inside a Flash file at their exact size (lossless, and JPEG3 kept as JPEG3 with its alpha) and proves every other tag stayed byte for byte. No Java |
 | `tools/restyle_frame.py CAR_APPCONSOLE OUT_SWF [--palette night\|deep\|v2] [--straight] [--radius N] [--preview DIR]` | Phase R4a: **your car's own** frame (`AppConsole.swf`) restyled: 135 pictures redrawn flat at their sizes (`tools/restyle_art.py`): the strips SYNC tiles across every button on every screen, the bars round the screen, their pieces and icons, the indicator lights. `--palette deep` near black for the car's screen, `--straight` the bars straight across without Ford's slanted pieces. No code unless `--radius`. Checks every tag; refuses a file that is not the frame it was made for. Keep OUT and DIR private |
