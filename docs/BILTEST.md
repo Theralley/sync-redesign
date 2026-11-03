@@ -3,6 +3,54 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
+## Sjätte turen: version 2, ram och Hem på ett rutnät (förberett 2026-11-03)
+
+Femte turen såg fortfarande ut som det gamla systemet med nya färger, och korten på Hem satt
+inte i linje. Version 2 bygger om ramen och Hem i stället för att måla om dem:
+
+- **Hem:** fyra lika stora kort på ett rutnät, 8 px mellan och runt korten. Varje kort har en
+  rubrik med ikon i områdets färg (Telefon, Navigation, Media, Klimat). Batteri och signal
+  sitter till höger på telefonkortets rubrikrad. Kompassen är borta. Förinställningarna och
+  sätesknapparna är platta och lite ljusare än kortet. Klimatkortet visar sätesknapparna mitt i
+  kortet, eftersom bilen aldrig visar temperaturerna på Hem.
+- **Listerna:** helt svarta, utan Fords flikar. På Hem visar listen upptill bara klockan och
+  listen nedtill bara Info, Hem och Inställningar. Den valda knappen har ett tunt streck
+  upptill. På alla andra skärmar står Telefon, Navigation, Media och Klimat kvar som förut,
+  och ett samtal tar över precis som förut.
+- **Menyerna** till vänster i Inställningar och Info är platta, utan glans.
+- **Färgerna:** knapparnas kant i knappens egen färg och inga glödband, som förut, men
+  knapparna är något ljusare så att de syns på korten.
+
+Det är 14 av Fords filer, alla läses när SYNC startar, plus färgerna. Ingen ändring av det man
+trycker på: knapparna sitter kvar och tar emot tryck som förut.
+
+- **SYNC-stickan:** `bundle-6166`: femte turens färger, Hem och ram tillbaka till Fords, sedan de
+  nya färgerna, Hems fyra hörn, listernas fem etiketter, Media.swf, de två menyerna, ramen och
+  sist Hem (18 delar). Stannar något tidigare körs inget efter det.
+- **UNTITLED 2:** `bundle-6088`: alla 14 filerna och färgerna tillbaka till Fords
+  (15 delar). Dimningen, Apps-rutorna och samtalshistoriken ligger kvar.
+- Generalrepeterat på en simulerad SYNC i bilens läge just nu: på och av, alla 33 delar byte för
+  byte. Båda stickorna skrivna, lästa tillbaka efter ommontering, märkta och utmatade 2026-11-03.
+- Codex har granskat s2am (inga fel) och verktygen. Fynden gällde verktygens kontroller, inte
+  filerna till bilen: de två allvarliga är kontrollerade direkt i bilens filer.
+
+I bilen:
+
+1. Parkerad, motorn igång. Stoppa i SYNC-stickan och vänta: "Install successfully completed",
+   sedan startar SYNC om. Det tar längre tid än förut (många filer).
+2. **Foto** av Hem, Telefon, Klimat, kartan, Media och Inställningar > Display, och av Info.
+   Gärna både i dagsljus och i mörker.
+3. Hem: tryck mitt i varje kort (Telefon, Karta, Media och Klimat ska öppnas), en förinställd
+   station, Stör inte och sätesvärmen (stängs den av igen?).
+4. Prova: ett samtal in och ett ut (tar samtalet över skärmen?), radion, klimatet (temperatur,
+   fläkt, A/C, **MAX DEFROST**), **backen och kameran**, röstknappen. På kartan: Mål och Meny.
+5. Listerna: står klockan i mitten upptill på Hem, och står Telefon/Navigation/Media/Klimat kvar
+   på de andra skärmarna? Ändra volymen på Hem: syns volymrutan?
+6. **Om skärmen förblir svart eller Hem är tomt:** stoppa i UNTITLED 2 ändå och vänta två
+   minuter. Installationstjänsten går vid sidan av skärmarna. Sedan mjuk omstart (vredet och ⏭
+   i tio sekunder).
+7. Ser något fel ut: UNTITLED 2. Ta med fotona och båda stickorna till Macen.
+
 ## Femte turen: rak ram, nästan svart, Hem som kort (förberett 2026-11-02)
 
 Fjärde turen visade att bilens skärm gör mörkgrått ljust, så allt flyttas närmare svart. Dessutom
@@ -41,6 +89,11 @@ I bilen:
    minuter. Installationstjänsten går vid sidan av skärmarna. Sedan mjuk omstart (vredet och ⏭
    i tio sekunder).
 7. Ser något fel ut: UNTITLED 2. Ta med fotona och båda stickorna till Macen.
+
+**Resultat (2026-11-02, cirka 16:30):** SYNC-stickan körd, alla fem delar verifierade byte för
+byte (importerat 2026-11-03). Rasmus: "still very as the old. looks shit. not even align." Korten
+på Hem satt förskjutna mot varandra och innehållet var Fords; se FINDINGS.md. UNTITLED 2 behövdes
+inte. Därför version 2.
 
 ## Fjärde turen: ramen lagad, mörkare dimning (2026-11-02)
 

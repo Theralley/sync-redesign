@@ -146,6 +146,35 @@ can at worst fail when opened; a changed main screen is read at every start.
 - Rasmus: "it still feels old/like the old system BUT with some new skins": the next steps are
   layouts, not pictures (Home's cards, then the frame's bars).
 
+## Home as cards in the car (2026-11-02, afternoon)
+
+- `bundle-6bce` ran at about 16:30; every part verified byte for byte on import (2026-11-03):
+  the deep theme without glow, the straight deep frame, Home as four cards.
+- Rasmus, from the photos: "still very as the old. looks shit. not even align." What they show:
+  - **Home's cards were staggered.** Each card was sized to Ford's content, so the left column
+    split at y 214/224 and the right at 230/240. Our own preview already showed it; since then
+    every preview is measured against the grid before anything goes to the car.
+  - The stripes were the left edge of a rounded rectangle, so they curved like brackets, and
+    the coloured lines under the corner tabs ended at random places.
+  - Everything inside the cards was still Ford's: the compass ball, the 2x3 preset grid with
+    outlines, the seat buttons low in an otherwise empty climate card.
+  - The side menus (Settings, Info) still looked glossy. Their rows are pictures in `Menu.swf`
+    and `Info.swf`, and the outline is drawn by code in the theme's System colour; neither is
+    one of the frame's strips.
+- **On this Mondeo Home never shows the climate temperatures.** The class makes the two fields
+  visible but fills them only from the set-point messages, which never come. Only the seat
+  buttons show.
+- **On Home the bars repeat the cards.** The phone label shows a Home-only view ("Telefon"), the
+  navigation label the area's name, the media label "Underhållning" and the climate label
+  "Klimat".
+- Black shows as navy at night, and a few levels near black are clearly visible: cards (6,7,9)
+  on (0,0,0) read as two tones. The round blobs in the night photos are fingerprints on the glass.
+- Two earlier readings were the photo's keystone, not the screen: the selected bottom button
+  does not stand 9 px higher, and the bottom-right line does not sit 8 px above the left one
+  (renders of the real sprites at their runtime frames).
+- The dark outline round all text is also on our own Apps menu, and no Ford code or placement
+  uses a filter: the player or the camera, not a target.
+
 ## Next
 
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the
