@@ -68,7 +68,8 @@ class (Apps menu); pictures the screens load from files (PNG/JPG, as the Apps me
 **Cannot, or not realistic:**
 - **The map itself:** it is drawn by the navigation engine, not by Flash. Only what lies on top
   of it can change.
-- **The reversing camera picture:** a hardware layer.
+- **The reversing camera picture:** a hardware layer. (Rasmus's car has no camera, only the
+  parking sensors' pop-up.)
 - The physical buttons; voice control and its spoken prompts (Nuance).
 - **Call sound:** that is Bluetooth, not the interface.
 - **A new font everywhere at once:** each Flash file carries its own fonts, so a font changes
@@ -112,7 +113,7 @@ the next.
 | SYNC checks Ford's files | A changed Ford screen is refused | Found in R3, on a screen that is not at start-up |
 | Decompiling and compiling changes more than intended | Behaviour drifts | One class at a time; tag comparison (only that class differs); decompile again and compare; Codex review |
 | Climate controls stop working | Defrost or heat unreachable: a safety issue | Climate pictures first, code later; test MAX DEFROST, A/C, fan and temperature every time |
-| Reversing camera hidden by a new layer | No camera picture | Never cover it; test reverse every time |
+| Reverse gear's picture hidden by a new layer | No parking-sensor pop-up | Never cover it; test reverse every time |
 | Distraction while driving | | Nothing new to tap while driving; SYNC's own driving lockouts stay as they are (SyncExtPack's Apps menu already switches them off; noted) |
 | Packs expire | A stick does nothing | Undo sticks rebuilt in every key window (the current one ends 2026-11-17) |
 | A stick breaks | No undo in the car | The 2 GB stick failed on 2026-10-31: use two healthy sticks; every stick is read back after writing |
@@ -128,7 +129,7 @@ Parked, engine running:
 2. **Photo** of every changed screen.
 3. Checklist: every button on the changed screen; the four areas and Home from each; an
    incoming and an outgoing call; radio, USB and Bluetooth sound; climate (temperature,
-   A/C, fan, **MAX DEFROST**); **reverse gear and the camera**; night mode (headlights on);
+   A/C, fan, **MAX DEFROST**); **reverse gear and the parking sensors**; night mode (headlights on);
    the voice button.
 4. Cold start: car off, wait a minute, start; check the changed screen again.
 5. The first time a kind of file is changed: the undo stick, then a photo of the original.

@@ -191,6 +191,23 @@ can at worst fail when opened; a changed main screen is read at every start.
 - Only the system colour's outline is borderless in our theme; buttons in the areas' own screens
   (climate, radio, phone) keep Ford's light grey edge (the areas' dayColor 0x666666).
 
+## The seventh visit, and CarPlay (2026-11-04)
+
+- `bundle-b2a0` ran at 15:53; all 8 parts verified byte for byte on import. The owner's verdict is
+  "better". The photos show only the map, so the presets' outlines and the stray "Klimat" are not
+  confirmed on a picture.
+- **CarPlay runs on this screen**, through AutoKit, installed by sync2-auto-magic.
+- **The open problem is speed.** CarPlay's touch and picture are slow, and so are Ford's own
+  screens. The 53% that `Desktop.exe` used on 2026-10-31 came before any of our screen changes, so the
+  slowness did not start with the redesign, but whether version 2 is lighter or heavier has not
+  been measured. Issue and plan: sync2-auto-magic's
+  [PERFORMANCE.md](https://github.com/Theralley/sync2-auto-magic/blob/main/docs/PERFORMANCE.md).
+- **The player is Adobe Flash Lite** (`\Windows\flashlite.dll`). None of Ford's screen files sets
+  a rendering quality (`_quality`), so that is an untried way to make drawing cheaper. Most files
+  run at 15 frames per second.
+- **The car has no reverse camera.** Reverse gear brings up only the parking sensors' pop-up. The
+  earlier notes' "camera" meant that.
+
 ## Next
 
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the

@@ -39,7 +39,7 @@ decided in SYNC's native part and is not visible in Flash).
 
 **Try tonight, with nothing changed:** Display, Mode **Auto**, **Auto dim On**, **Auto dim
 offset −5**, Brightness low. That is the darkest Ford allows with the screen on. Or **Off**:
-dark, a touch wakes it, and the camera and calls take over as in the table.
+dark, a touch wakes it, and reverse gear and calls take over as in the table.
 
 ## The night screen
 
@@ -61,11 +61,11 @@ through black, so the real figure is somewhat higher).
 | On by time as a fallback? | **Yes**, in our code: when the display mode is fixed to Day, a time window (for example 21:00 to 06:00) from SYNC's clock |
 | Below Ford's lowest brightness? | **Partly proven, partly to test.** The night screen itself cuts the light to about an eighth without touching the backlight. Whether the backlight goes below Ford's 0 is decided by SYNC's native display plugin (`SetBrightness`): a car test passes values below 0 and reads back what the plugin kept. The undo is Ford's own brightness slider |
 | Wake with a touch? | **Yes**, the same way as Ford's Off: the layer takes the touch |
-| Calls and the reversing camera? | **Always take over.** The night screen is built into Ford's `BackLight`, so every case in the table above ends it the same way it ends Ford's Off. Car test: reverse, and a call, each with the night screen up |
+| Calls and reverse gear? | **Always take over.** The night screen is built into Ford's `BackLight`, so every case in the table above ends it the same way it ends Ford's Off. Car test: reverse, and a call, each with the night screen up |
 
 **Where it lives:** in the frame (`AppConsole.swf`, `BackLight`), which loads at start-up: plan
 phase R8, the highest risk. A first, safer step uses the proven Apps menu route: a "Night" tile
-that opens the night screen by hand, to test how it looks and how the camera and calls behave
+that opens the night screen by hand, to test how it looks and how reverse gear and calls behave
 over it, before anything at start-up changes.
 
 ## Album covers over Bluetooth

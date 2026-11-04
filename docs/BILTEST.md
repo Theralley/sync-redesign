@@ -3,6 +3,21 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
+## Sjunde turens resultat (2026-11-04)
+
+- `bundle-b2a0` kördes 15:53. Alla 8 delarna verifierade byte för byte. UNTITLED 2 (`bundle-de93`)
+  behövdes inte och är oanvänd.
+- Rasmus: bättre. Fotona visar bara kartan, så Hem är inte kontrollerat på bild: varken ramarna
+  eller den lösa "Klimat".
+- **CarPlay fungerar**, installerat med sync2-auto-magic: hemskärmen, tryck, Kartor med vägledning
+  och Spotify genom bilens högtalare. Ljudet hördes med iPhonens Bluetooth på, så vägen är inte
+  bevisad. Exit med CarPlay igång tar tillbaka SYNC. Siri och samtal är inte provade.
+- **Öppet problem: SYNC 2 är väldigt långsamt.** Tryck i CarPlay kommer sent, bilden hackar, och
+  Fords egna skärmar är också långsamma. Se sync2-auto-magics
+  [PERFORMANCE.md](https://github.com/Theralley/sync2-auto-magic/blob/main/docs/PERFORMANCE.md).
+- **Rättelse:** bilen har ingen backkamera, bara parkeringssensorer. Deras ruta kommer inte upp
+  över AutoKit. Backtesterna nedan gäller nu den rutan.
+
 ## Sjunde turen: version 2 lagad (förberett 2026-11-03)
 
 Sjätte turens tre fel, lagade:
@@ -37,7 +52,7 @@ I bilen:
 2. **Foto** av Hem (nära på mediakortet och klimatkortet), klimatskärmen, radion och telefonen.
 3. Hem: sitter förinställningarnas ramar på knapparna nu, eller syns inga kanter alls? Är den
    lösa "Klimat" borta? Tryck på en förinställd station och Stör inte.
-4. Prova som förut: samtal in och ut, klimatet (**MAX DEFROST**), **backen och kameran**,
+4. Prova som förut: samtal in och ut, klimatet (**MAX DEFROST**), **backen och parkeringssensorerna**,
    röstknappen.
 5. Ser något fel ut: UNTITLED 2. Ta med fotona och båda stickorna till Macen.
 
@@ -81,7 +96,7 @@ I bilen:
 3. Hem: tryck mitt i varje kort (Telefon, Karta, Media och Klimat ska öppnas), en förinställd
    station, Stör inte och sätesvärmen (stängs den av igen?).
 4. Prova: ett samtal in och ett ut (tar samtalet över skärmen?), radion, klimatet (temperatur,
-   fläkt, A/C, **MAX DEFROST**), **backen och kameran**, röstknappen. På kartan: Mål och Meny.
+   fläkt, A/C, **MAX DEFROST**), **backen och parkeringssensorerna**, röstknappen. På kartan: Mål och Meny.
 5. Listerna: står klockan i mitten upptill på Hem, och står Telefon/Navigation/Media/Klimat kvar
    på de andra skärmarna? Ändra volymen på Hem: syns volymrutan?
 6. **Om skärmen förblir svart eller Hem är tomt:** stoppa i UNTITLED 2 ändå och vänta två
@@ -132,7 +147,7 @@ I bilen:
 3. Hem: tryck mitt i varje kort (Telefon, Karta, Media och Klimat ska öppnas), en förinställd
    station, Stör inte och sätesvärmen (stängs den av igen?).
 4. Prova: ett samtal in och ett ut, radion, klimatet (temperatur, fläkt, A/C, **MAX DEFROST**),
-   **backen och kameran**, röstknappen. På kartan: Mål och Meny.
+   **backen och parkeringssensorerna**, röstknappen. På kartan: Mål och Meny.
 5. Dimningen: Läge Auto, Autom. dimning På, tryck − fler än fem gånger, stäng Display och öppna
    den igen. Vad står förskjutningen på, och blev skärmen mörkare? + eller återställning tar
    tillbaka den.
@@ -194,7 +209,7 @@ I bilen:
    sedan startar SYNC om.
 2. **Foto** av Hem, Telefon, Media, Klimat och Navigering.
 3. Prova: ett samtal in och ett ut, radion, klimatet (temperatur, fläkt, A/C, **MAX DEFROST**),
-   **backen och kameran**, röstknappen.
+   **backen och parkeringssensorerna**, röstknappen.
 4. **Om skärmen förblir svart:** stoppa i UNTITLED 2 ändå och vänta två minuter. Installations-
    tjänsten går vid sidan av skärmarna. Sedan mjuk omstart (vredet och ⏭ i tio sekunder).
 5. Ser något fel ut: UNTITLED 2. Ta med fotona och stickorna till Macen.
@@ -292,7 +307,7 @@ Ser något fel ut: kör steget **ångra** (tabellen). Startar inte skärmen alls
 **Efter steg 1 (Night):**
 - [ ] Färgerna har bytts: knappar och glöd per område (gul, grön, röd, blå).
 - [ ] Klimat: alla knappar svarar, även **MAX defrost**, A/C, fläkt och stolvärme.
-- [ ] Backa: **backkameran** kommer upp.
+- [ ] Backa: **parkeringssensorernas ruta** kommer upp.
 - [ ] Ett samtal (ring dig själv): samtalsrutan kommer upp och samtalet fungerar.
 - [ ] Med strålkastarna på (eller i mörker): nattläget ser rätt ut.
 
@@ -310,7 +325,7 @@ Ser något fel ut: kör steget **ångra** (tabellen). Startar inte skärmen alls
 - [ ] Nya ikoner: pilarna, den gröna luren vid "Ring", markeringarna för utgående, inkommande
       och missade samtal.
 - [ ] Tryck på ett samtal och "Ring": samtalet går.
-- [ ] Telefon i övrigt, ett inkommande samtal och backkameran som vanligt.
+- [ ] Telefon i övrigt, ett inkommande samtal och backen som vanligt.
 - [ ] Öppnas inte skärmen, eller ser den fel ut: ångra med `screen-e9a6`. Resten av SYNC
       påverkas inte; skärmen laddas bara när den öppnas.
 

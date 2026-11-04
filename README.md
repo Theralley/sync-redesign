@@ -14,12 +14,13 @@ are rebuilt on one 8 px grid instead of repainted:
 - flat buttons without outlines;
 - flat side menus in Settings and Info.
 
-**Status (2026-11-03):** version 2 has run in the car. It changed 14 of Ford's start-up files at
-once, and every part was verified byte for byte. Its three faults are fixed for the next visit
-(the seventh): the presets' outlines out of place, a stray label in the climate card, and grey
-edges on the areas' own screens. What each visit changed and showed is in
+**Status (2026-11-04):** version 2 runs in the car, with the fixes from the seventh visit. It
+changed 14 of Ford's start-up files, and every part was verified byte for byte. CarPlay now works
+on the same screen through [sync2-auto-magic](https://github.com/Theralley/sync2-auto-magic). The
+open problem is speed: SYNC 2 is very slow, with CarPlay and on its own screens
+([the issue](https://github.com/Theralley/sync2-auto-magic/blob/main/docs/PERFORMANCE.md)). What each visit changed and showed is in
 [docs/FINDINGS.md](docs/FINDINGS.md); the car tests, step by step, in [docs/BILTEST.md](docs/BILTEST.md)
-(Swedish). Next: the phone screen's own glossy menu (`Phone.swf`).
+(Swedish). Next: measure the speed, then the phone screen's own glossy menu (`Phone.swf`).
 
 ## What SYNC 2's screens are
 

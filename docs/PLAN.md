@@ -43,7 +43,7 @@ car, parked.
   car. Packs only work inside their key window (the current one ends 2026-11-17 09:35 UTC), so
   the restore stick is rebuilt in every new window.
 - **One screen at a time.** Every change is tested by tapping, in day and night mode, after a
-  cold start, and with an incoming call and the reverse camera.
+  cold start, and with an incoming call and in reverse gear.
 
 ## Steps
 
