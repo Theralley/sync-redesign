@@ -3,6 +3,16 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
+## Nästa tur: hårdvaruavkodning (förberett 2026-11-14)
+
+- SYNC (röd) = `akcfg-1063`: AutoKit avkodar CarPlays bild med chipets videoavkodare i stället för
+  processorn. UNTITLED 2 (no-name) = `akcfg-53a1`, ångern: tillbaka till mjukvaruavkodning.
+- Båda är generalrepeterade på den simulerade bilen, skrivna, kontrollerade och utmatade. De går
+  att installera till tisdag 17 november kl. 10:35.
+- Stäng AutoKit (Exit) innan stickan sätts i. Annars vägrar jobbet och ändrar ingenting.
+- Blir bilden svart: tryck Exit eller dra ur adaptern. Sätt sedan i ångerstickan.
+- Skärmarnas ånger (`bundle-de93`) ligger inte längre på någon sticka, bara på Macen.
+
 ## Fartmätningen (2026-11-14)
 
 - Mätstickan (SYNC) kördes 12:04 och hämtstickan (UNTITLED 2) 12:51. Båda är importerade.

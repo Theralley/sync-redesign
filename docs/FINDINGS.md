@@ -224,6 +224,9 @@ can at worst fail when opened; a changed main screen is read at every start.
 
 ## Next
 
+0. **Speed first.** CarPlay's video decoded by the chip's hardware is the first test. Its sticks
+   are ready (2026-11-14), but have not run in the car yet. Lighter screens come later, because
+   behind CarPlay Ford's screens take only about 12% of the processor.
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the
    gradients into mock screens, to choose colours before anything goes to the car.
 2. ~~Lighter logger~~: done, the screen is copied every 10 s (sync2-auto-magic 03e2fc5).

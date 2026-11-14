@@ -22,7 +22,9 @@ open problem is speed: SYNC 2 is very slow, with CarPlay and on its own screens.
 while Ford's screens drop to about 12%
 ([the issue](https://github.com/Theralley/sync2-auto-magic/blob/main/docs/PERFORMANCE.md)). What each visit changed and showed is in
 [docs/FINDINGS.md](docs/FINDINGS.md); the car tests, step by step, in [docs/BILTEST.md](docs/BILTEST.md)
-(Swedish). Next: measure the speed, then the phone screen's own glossy menu (`Phone.swf`).
+(Swedish). Next: the speed. The first fix to test is CarPlay's video decoded by the chip's
+hardware instead of the processor; its sticks are ready but have not run in the car yet. After
+that comes the phone screen's own glossy menu (`Phone.swf`).
 
 ## What SYNC 2's screens are
 
