@@ -5,8 +5,13 @@ simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
 ## Nästa tur: hårdvaruavkodning (förberett 2026-11-14)
 
-- SYNC (röd) = `akcfg-1063`: AutoKit avkodar CarPlays bild med chipets videoavkodare i stället för
-  processorn. UNTITLED 2 (no-name) = `akcfg-53a1`, ångern: tillbaka till mjukvaruavkodning.
+- SYNC (röd) = `akcfg-9b10`: AutoKit avkodar CarPlays bild med chipets videoavkodare i stället för
+  processorn. UNTITLED 2 (no-name) = `akcfg-da1b`, ångern: tillbaka till mjukvaruavkodning.
+- Båda mäter också i 30 minuter efter sin ändring: processorns last, klockfrekvens och
+  kärnspänningens inställning. Det är underlaget för frågan om överklockning.
+- Sätt i samma sticka en gång till efteråt (AutoKit stängd): då hämtas mätningen och inget
+  ändras. Det är nytt och oprövat i bilen. Kommer inget meddelande inom två minuter: dra ur
+  stickan, mätningen ligger kvar i bilen.
 - Båda är generalrepeterade på den simulerade bilen, skrivna, kontrollerade och utmatade. De går
   att installera till tisdag 17 november kl. 10:35.
 - Stäng AutoKit (Exit) innan stickan sätts i. Annars vägrar jobbet och ändrar ingenting.
