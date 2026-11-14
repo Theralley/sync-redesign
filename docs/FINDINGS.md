@@ -215,6 +215,8 @@ can at worst fail when opened; a changed main screen is read at every start.
   CarPlay, so lighter screens would help CarPlay little.** The cheaper decoding is
   sync2-auto-magic's work
   ([PERFORMANCE.md](https://github.com/Theralley/sync2-auto-magic/blob/main/docs/PERFORMANCE.md)).
+- CarPlay's sound reaches the car's speakers through AutoKit: Spotify played with the iPhone's
+  Bluetooth off.
 - On Ford's own screens, version 2 in the car, `Desktop.exe` used about 49% before AutoKit
   opened. With AutoKit in front but CarPlay stopped, it used about 60% for ten minutes while
   hidden, perhaps with the radio on. On 2026-10-31, before any of our changes, it used 53%. Which

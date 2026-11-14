@@ -23,7 +23,8 @@ simulerad SYNC med bilens egna filer. Inget har gått till bilen.
   som hjälper är billigare avkodning, i sync2-auto-magic.
 - Rasmus anteckningar:
   - samtalet kl. 12:06 fungerade inte (mikrofon/telefon);
-  - musik via kabel fungerar;
+  - musik via kabel fungerar, med iPhonens Bluetooth avstängt. Ljudet går alltså via AutoKit
+    och CarPlay, inte via Bluetooth;
   - GPS:en seg;
   - musiken hackade och hoppade fram vid tryck kl. 12:38;
   - radion startad medan CarPlay spelade: därefter startade CarPlays musik inte, och efter
