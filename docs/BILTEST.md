@@ -3,6 +3,25 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
+## Fartmätningen (2026-11-14)
+
+- Mätstickan (SYNC) kördes 12:04 och hämtstickan (UNTITLED 2) 12:51. Båda är importerade.
+  UNTITLED 2 har ångerstickan (`bundle-de93`) igen. Den går att installera till tisdag
+  17 november kl. 10:35.
+- **Med CarPlay igång står processorn på 100 %.** AutoKits videoavkodning tar störst del. Fords
+  skärmar sjunker till ungefär 12 % bakom CarPlay, så lättare skärmar hjälper CarPlay lite. Det
+  som hjälper är billigare avkodning, i sync2-auto-magic.
+- Rasmus anteckningar:
+  - samtalet kl. 12:06 fungerade inte (mikrofon/telefon);
+  - musik via kabel fungerar;
+  - GPS:en seg;
+  - musiken hackade och hoppade fram vid tryck kl. 12:38;
+  - radion startad medan CarPlay spelade: därefter startade CarPlays musik inte, och efter
+    kabeln ut och in startade inte CarPlay alls;
+  - full värme mot skärmen. Temperaturen kan inte loggas än.
+- Detaljer: sync2-auto-magics
+  [P1-TESTLOG.md](https://github.com/Theralley/sync2-auto-magic/blob/main/docs/P1-TESTLOG.md).
+
 ## Sjunde turens resultat (2026-11-04)
 
 - `bundle-b2a0` kördes 15:53. Alla 8 delarna verifierade byte för byte. UNTITLED 2 (`bundle-de93`)

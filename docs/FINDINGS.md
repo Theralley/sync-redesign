@@ -208,6 +208,20 @@ can at worst fail when opened; a changed main screen is read at every start.
 - **The car has no reverse camera.** Reverse gear brings up only the parking sensors' pop-up. The
   earlier notes' "camera" meant that.
 
+## The speed measurement (2026-11-14)
+
+- With CarPlay running, the processor was at 100% in nearly every sample. AutoKit's video
+  decoding took the biggest share. **Ford's screens (`Desktop.exe`) dropped to about 12% behind
+  CarPlay, so lighter screens would help CarPlay little.** The cheaper decoding is
+  sync2-auto-magic's work
+  ([PERFORMANCE.md](https://github.com/Theralley/sync2-auto-magic/blob/main/docs/PERFORMANCE.md)).
+- On Ford's own screens, version 2 in the car, `Desktop.exe` used about 49% before AutoKit
+  opened. With AutoKit in front but CarPlay stopped, it used about 60% for ten minutes while
+  hidden, perhaps with the radio on. On 2026-10-31, before any of our changes, it used 53%. Which
+  screen showed in each case was not noted, so this does not say whether version 2 is lighter or
+  heavier. A fair comparison needs the same screen for a few minutes, once with version 2 and once
+  with Ford's files.
+
 ## Next
 
 1. Plan step S2, wallpapers, and a **theme preview on the Mac**: render `Theme.XML` and the
