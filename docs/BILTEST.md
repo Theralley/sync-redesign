@@ -3,7 +3,21 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
-## Nästa tur: hårdvaruavkodning (förberett 2026-11-14)
+## Nästa tur: mät hårdvaruavkodningen en gång till (förberett 2026-11-15)
+
+- **Hårdvaruavkodningen är påslagen** sedan 2026-11-15 kl. 09:48 (`akcfg-9b10`). Andra isättningen
+  fungerade: stickan hämtade mätningen.
+- Mätningen blev bara 42 sekunder, allt på Fords Home. SYNC stängde troligen av sig strax efter
+  första isättningen och mätprogrammen kom inte igång igen. Processorns klocka: 600 MHz.
+  Kärnspänningen gick inte att läsa.
+- SYNC (röd) = `akcfg-f021`: samma inställningar igen och en ny mätning på 30 minuter. Etiketten på
+  stickan nämner det gamla jobbnumret, stegen är desamma.
+- **Låt bilen vara igång hela tiden** från första isättningen tills stickan har satts i andra
+  gången. Stängs SYNC av däremellan försvinner mätningen.
+- UNTITLED 2 (no-name) = `akcfg-da1b`, ångern, oanvänd. Båda går att installera till tisdag
+  17 november kl. 10:35.
+
+## Förra turen: hårdvaruavkodning (förberett 2026-11-14)
 
 - SYNC (röd) = `akcfg-9b10`: AutoKit avkodar CarPlays bild med chipets videoavkodare i stället för
   processorn. UNTITLED 2 (no-name) = `akcfg-da1b`, ångern: tillbaka till mjukvaruavkodning.
