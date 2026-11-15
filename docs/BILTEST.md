@@ -3,19 +3,19 @@
 Förberett 2026-10-31. Alla jobb är byggda med sync2-auto-magic och generalrepeterade på en
 simulerad SYNC med bilens egna filer. Inget har gått till bilen.
 
-## Nästa tur: mät hårdvaruavkodningen en gång till (förberett 2026-11-15)
+## Läget efter turen 2026-11-15
 
-- **Hårdvaruavkodningen är påslagen** sedan 2026-11-15 kl. 09:48 (`akcfg-9b10`). Andra isättningen
-  fungerade: stickan hämtade mätningen.
-- Mätningen blev bara 42 sekunder, allt på Fords Home. SYNC stängde troligen av sig strax efter
-  första isättningen och mätprogrammen kom inte igång igen. Processorns klocka: 600 MHz.
-  Kärnspänningen gick inte att läsa.
-- SYNC (röd) = `akcfg-f021`: samma inställningar igen och en ny mätning på 30 minuter. Etiketten på
-  stickan nämner det gamla jobbnumret, stegen är desamma.
-- **Låt bilen vara igång hela tiden** från första isättningen tills stickan har satts i andra
-  gången. Stängs SYNC av däremellan försvinner mätningen.
-- UNTITLED 2 (no-name) = `akcfg-da1b`, ångern, oanvänd. Båda går att installera till tisdag
-  17 november kl. 10:35.
+- Fyra mätningar kördes. Hårdvaruavkodning och 10 bilder per sekund ändrade ingenting: processorn
+  står på 99-100 % och AutoKit får det som blir över.
+- **Mindre bild hjälper:** med 640x384 är processorn under 95 % i 14 av 34 mätpunkter och CarPlay
+  kändes mycket snabbare. Bilden fyller inte skärmen, den ligger i mitten med svart ram.
+- Bilen står nu på 640x384, 10 bilder per sekund, mjukvaruavkodning.
+- UNTITLED 2 (no-name) = `akcfg-da1b`, ångern till original (800x480, 15), oanvänd. Går att
+  installera till tisdag 17 november kl. 10:35. Röda stickan är förbrukad.
+- Efter Exit i AutoKit: räkna till fem innan en sticka sätts i. Annars blir AutoKit kvar dold
+  och CarPlay går inte att starta förrän SYNC startats om (sync2-auto-magic, ärende 2).
+- Inget nytt kan byggas före tisdag 17 november kl. 22:35. Då: ge CarPlays bildtråd företräde
+  framför Fords skärmar, laga vakten, och en läsande kärndrivrutin inför överklockning (mål 700 MHz).
 
 ## Förra turen: hårdvaruavkodning (förberett 2026-11-14)
 
